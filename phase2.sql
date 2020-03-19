@@ -35,4 +35,21 @@ create table atm_locations
     atm_id NUMBER(10) not null REFERENCES atm(atm_id),
     constraint atm_locations_pk PRIMARY KEY (atm_id, location_id) 
 );
+
+create table account_actions 
+(
+    action_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
+    amount NUMBER(15) not null,
+    action_time date,
+    constraint acct_actions_pk PRIMARY KEY (action_id)
+);
+
+create table performs
+(
+    customer_id NUMBER(10) not null REFERENCES customer(customer_id),
+    action_id NUMBER(10) not null REFERENCES account_actions(action_id),
+    constraint acct_performs_pk PRIMARY KEY (action_id)
+    
+);
+
     
