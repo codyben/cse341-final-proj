@@ -52,4 +52,52 @@ create table performs
     
 );
 
+create table account
+(
+    acct_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
+    balance NUMBER(15) DEFAULT 0 not null,
+    interest DECIMAL(5,5) not null,
+    creation_date date,
+    constraint acc_pk PRIMARY KEY (acct_id)
+);
+
+create table checking_account 
+(
+     acct_id NUMBER(10) not null REFERENCES account(acct_id),
+     min_balance NUMBER(2) default 5 not null,
+     constraint ck_acct_pk PRIMARY KEY (acct_id)
+);
+
+create table loan
+(
+    
+    loan_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
+    interest DECIMAL(6,5) not null,
+    payment DECIMAL(8,8) not null,
+    amount number(15) not null,
+    constraint loan_pk PRIMARY KEY (loan_id)
+);
+
+create table collateral
+(
+    collateral_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
+    value DECIMAL(8,8) not null,
+    constraint collateral_pk PRIMARY KEY (collateral_id)
+);
+
+create table secured_loan
+(
+    loan_id NUMBER(10) REFERENCES loan(loan_id),
+    collateral_id NUMBER(10) REFERENCES collateral(collateral_id),
+    constraint secured_loan_pk PRIMARY KEY (loan_id)
+);
+
+create table card
+(
+    card_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
+    cvc NUMBER(3) not null,
+    card_number NUMBER(16) not null,
+    constraint card_pk PRIMARY KEY (card_id)
+);
+
     
