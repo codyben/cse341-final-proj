@@ -1,5 +1,3 @@
-drop table customer;
-drop table location;
 drop table branch;
 drop table performs;
 drop table branch;
@@ -8,7 +6,7 @@ drop table atm_locations;
 drop table account_actions;
 drop table performs;
 drop table checking_account;
-drop table loan;
+drop table account;
 drop table secured_loan;
 drop table collateral;
 drop table credit_card;
@@ -17,6 +15,11 @@ drop table card;
 drop table purchases;
 drop table buys;
 drop table holds;
+drop table loan_action;
+drop table loan_payment;
+drop table loan;
+drop table location;
+drop table customer;
 
 create table customer
 (
@@ -56,15 +59,6 @@ create table atm_locations
     constraint atm_locations_pk PRIMARY KEY (atm_id, location_id) 
 );
 
-create table account_actions 
-(
-    action_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
-    amount NUMBER(15) not null,
-    action_time date,
-    location_id NUMBER(10) REFERENCES location)(location_id),
-    constraint acct_actions_pk PRIMARY KEY (action_id)
-);
-
 
 create table account
 (
@@ -75,14 +69,6 @@ create table account
     constraint acc_pk PRIMARY KEY (acct_id)
 );
 
-create table performs
-(
-    customer_id NUMBER(10) not null REFERENCES customer(customer_id),
-    action_id NUMBER(10) not null REFERENCES account_actions(action_id),
-    acct_id NUMBER(10) not null REFERENCES account(acct_id),
-    constraint acct_performs_pk PRIMARY KEY (action_id)
-    
-);
 
 create table checking_account 
 (
@@ -144,7 +130,7 @@ create table credit_card
     card_id NUMBER(10) REFERENCES card(card_id) not null,
     interest DECIMAL(6,5) not null,
     balance_due AS (card_id * (1+interest)),
-    running_balance FLOAT(63) default 0 not null
+    running_balance FLOAT(63) default 0 not null,
     constraint credit_pk PRIMARY KEY (card_id)
 );
 
@@ -182,8 +168,23 @@ create table loan_payment
     constraint loan_payment_pk PRIMARY KEY (payment_id)
 );
 
+create table account_actions 
+(
+    action_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
+    amount NUMBER(15) not null,
+    action_time date,
+    location_id NUMBER(10) REFERENCES location(location_id),
+    constraint acct_actions_pk PRIMARY KEY (action_id)
+);
+create table performs
+(
+    customer_id NUMBER(10) not null REFERENCES customer(customer_id),
+    action_id NUMBER(10) not null REFERENCES account_actions(action_id),
+    acct_id NUMBER(10) not null REFERENCES account(acct_id),
+    constraint acct_performs_pk PRIMARY KEY (action_id)
     
-    
+);
+
     
     
     
