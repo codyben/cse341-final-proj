@@ -184,7 +184,7 @@ create table performs
     constraint acct_performs_pk PRIMARY KEY (action_id)
     
 );
-
-    
+ALTER TABLE location drop column address;
+ALTER TABLE location add ( address VARCHAR2(300) GENERATED ALWAYS as ( to_char(street_num) || ' ' || street || ' ' || city || ' ' || state || ' ' || to_char(zip)) VIRTUAL);
     
     
