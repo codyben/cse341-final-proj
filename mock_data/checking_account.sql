@@ -1,0 +1,12 @@
+insert into checking_account (acct_id, min_balance) values (1, 5);
+insert into checking_account (acct_id, min_balance) values (2, 5);
+insert into checking_account (acct_id, min_balance) values (3, 5);
+insert into checking_account (acct_id, min_balance) values (4, 5);
+insert into checking_account (acct_id, min_balance) values (5, 5);
+insert into checking_account (acct_id, min_balance) values (6, 5);
+insert into checking_account (acct_id, min_balance) values (7, 5);
+insert into checking_account (acct_id, min_balance) values (8, 5);
+insert into checking_account (acct_id, min_balance) values (9, 5);
+insert into checking_account (acct_id, min_balance) values (10, 5);
+insert into checking_account (acct_id, min_balance) values (11, 5);
+insert into checking_account (acct_id, min_balance) values (12, 5);

@@ -1,0 +1,17 @@
+insert into holds (customer_id, acct_id, add_date) values (69, 2, date '2020-03-25');
+insert into holds (customer_id, acct_id, add_date) values (75, 14, date '2020-03-25');
+insert into holds (customer_id, acct_id, add_date) values (61, 10, date '2020-03-25');
+insert into holds (customer_id, acct_id, add_date) values (65, 1, date '2020-03-25');
+insert into holds (customer_id, acct_id, add_date) values (63, 2, date '2020-03-25');
+insert into holds (customer_id, acct_id, add_date) values (66, 11, date '2020-03-25');
+insert into holds (customer_id, acct_id, add_date) values (67, 13, date '2020-03-25');
+insert into holds (customer_id, acct_id, add_date) values (65, 7, date '2020-03-25');
+insert into holds (customer_id, acct_id, add_date) values (73, 10, date '2020-03-25');
+insert into holds (customer_id, acct_id, add_date) values (73, 6, date '2020-03-25');
+insert into holds (customer_id, acct_id, add_date) values (73, 13, date '2020-03-25');
+insert into holds (customer_id, acct_id, add_date) values (70, 14, date '2020-03-25');
+insert into holds (customer_id, acct_id, add_date) values (61, 12, date '2020-03-25');
+insert into holds (customer_id, acct_id, add_date) values (74, 15, date '2020-03-25');
+insert into holds (customer_id, acct_id, add_date) values (65, 10, date '2020-03-25');
+insert into holds (customer_id, acct_id, add_date) values (68, 3, date '2020-03-25');
+insert into holds (customer_id, acct_id, add_date) values (63, 9, date '2020-03-25');
