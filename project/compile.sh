@@ -1,0 +1,2 @@
+cd Project;
+javac *.java;
