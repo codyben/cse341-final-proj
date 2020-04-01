@@ -60,7 +60,7 @@ class Project{
                     return true; //have the user pick another role.
                 }
                 client.provision(new CustomerOperations(Helper.con()));
-                client.divergent_paths();
+                User customer = client.divergent_paths();
                 return true;
             } else if(choice.equals("Quit")) {
                 Helper.exit();

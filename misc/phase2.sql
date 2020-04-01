@@ -186,5 +186,11 @@ create table performs
 );
 ALTER TABLE location drop column address;
 ALTER TABLE location add ( address VARCHAR2(300) GENERATED ALWAYS as ( to_char(street_num) || ' ' || street || ' ' || city || ' ' || state || ' ' || to_char(zip)) VIRTUAL);
-    
+
+CREATE TABLE customer_cards
+(
+    card_id NUMBER(10) not null REFERENCES card(card_id),
+    customer_id NUMBER(10) not null REFERENCES customer(customer_id),
+    constraint customer_cards_pk PRIMARY KEY (card_id, customer_id)
+);
     

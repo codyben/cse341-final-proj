@@ -14,7 +14,7 @@ class Helper {
     public static void cleanup() {
         try {
             Helper.con.close();
-            Helper.notify("green", "Successfully closed connection", true);
+            Helper.notify("green", "Successfully closed connection.", true);
         } catch(Exception e) {
             Helper.notify("error", "An additional error occurred while closing the db connection.", true);
             System.exit(1);
