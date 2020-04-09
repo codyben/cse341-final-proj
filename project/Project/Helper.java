@@ -174,4 +174,68 @@ class Helper {
 
         return ret;
     }
+
+    public static void notify(String color, int ms, boolean n) {
+        String msg = Integer.toString(ms);
+        String code = "";
+        String reset = "\u001B[0m";
+
+        switch(color.toLowerCase()) {
+            case "error":
+            case "red":
+                code = "\u001B[31m";
+                break;
+
+            case "success":
+            case "green": code = "\u001B[32m"; break;
+            case "warn":
+            case "yellow": code = "\u001B[33m"; break;
+            case "heading":
+            case "notify":
+            case "cyan": code = "\u001B[36m"; break;
+        }
+
+        if(!code.equals("")) {
+            System.out.print(code+msg+reset);
+        } else {
+            System.out.print(msg);
+        }
+
+        if(n) {
+            System.out.println();
+        }
+    }
+
+    public static String notify_str(String color, int ms, boolean n) {
+        String msg = Integer.toString(ms);
+        String code = "";
+        String reset = "\u001B[0m";
+        String ret = "";
+        switch(color.toLowerCase()) {
+            case "error":
+            case "red":
+                code = "\u001B[31m";
+                break;
+
+            case "success":
+            case "green": code = "\u001B[32m"; break;
+            case "warn":
+            case "yellow": code = "\u001B[33m"; break;
+            case "notify":
+            case "heading":
+            case "cyan": code = "\u001B[36m"; break;
+        }
+
+        if(!code.equals("")) {
+            ret = code+msg+reset;
+        } else {
+            ret = msg;
+        }
+
+        if(n) {
+            ret += "\n";
+        }
+
+        return ret;
+    }
 }

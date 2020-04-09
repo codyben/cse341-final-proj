@@ -46,7 +46,7 @@ class Client extends ProjectInterface {
 			do {
 
 				String choice = Helper.get_choice(this.coerce(query_result), "Select a user from the list below.");
-				 customer = query_result.get(choice);
+				customer = query_result.get(choice);
 				Helper.notify("notify", "\nYou have selected "+choice+".", true);
 				confirm = Helper.confirm("Is this the correct user?");
 			}while(!confirm && customer != null);
@@ -58,19 +58,62 @@ class Client extends ProjectInterface {
 		return customer;	
 	}
 
-	public String intent() {
-		Helper.notify("heading", "\nSelect an action to perform on the account.\n", true);
-		HashMap<Integer, String> paths = new HashMap<>();
+	public String intent(final User c) {
+		c.compute();
+		c.format_data();
 		String interface2 = "Account Deposit / Withdrawal.";
 		String interface3Alpha = "Loan Payment.";
-		paths.put(1, );
+		String interface3Beta = "Credit Card Payment.";
+		// String interface4 = "Open a new account.";
+		// String interface5 = "Obtain a new / replacement credit card";
+		// String interface6 = "Take out a new loan";
+		String interface7Alpha = "Make a purchase with your cards";
+		String interface7Beta = "View activity on your cards";
+		String quit = "Return to previous.";
+		HashMap<Integer, String> paths = new HashMap<>();
+		int i = 1;
+		if(c.num_accounts > 0 ) {
+			paths.put(i++, interface2);
+		} else if(c.num_credit > 0) {
+			paths.put(i++, interface3Beta);
+		} else if(c.num_loans > 0 ) {
+			paths.put(i++, interface3Alpha);
+		} else if(c.total_cards > 0 ) {
+			paths.put(i++, interface7Beta);
+			paths.put(i++, interface7Alpha);
+		} else {
+			Helper.notify("warn", "\nYour account does not appear to have any accounts,/loans/cards associated with it. Please choose an option from below.\n", true);
+
+		}
+		// paths.put(i++, interface4);
+		// paths.put(i++, interface5);
+		// paths.put(i++, interface6);
+		paths.put(i++, quit);
+		
+
+		String choice = Helper.get_choice(paths, Helper.notify_str("heading", "\nSelect an action to perform on the account.\n", true));
+		
+		if(choice.equals(interface2)) {
+
+		} else if(choice.equals(interface3Alpha)) {
+			
+		} else if(choice.equals(interface3Beta)) {
+
+		} else if(choice.equals(interface7Alpha)) {
+
+		} else if(choice.equals(interface7Beta)) {
+
+		} else {
+			
+		}
 	}
 
 	public Account list_accounts(User customer) {
 		ArrayList<Account> accounts = ops.account_details_for_user(customer);
 
 		if(accounts.size() == 0) {
-			Helper.notify("warn", customer.full_name+" has no accounts.",n);
+			Helper.notify("warn", customer.full_name+" has no accounts.",true);
 		}
+		return null;
 	}
 }

@@ -61,6 +61,7 @@ class Project{
                 }
                 client.provision(new CustomerOperations(Helper.con()));
                 User customer = client.divergent_paths();
+                client.intent(customer);
                 return true;
             } else if(choice.equals("Quit")) {
                 Helper.exit();

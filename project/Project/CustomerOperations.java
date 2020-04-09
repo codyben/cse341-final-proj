@@ -4,6 +4,11 @@ class CustomerOperations extends DatabaseOperations {
 
     private PreparedStatement all_users;
     private PreparedStatement account_details;
+    private PreparedStatement num_accounts;
+    private PreparedStatement num_credit;
+    private PreparedStatement num_debit;
+    private PreparedStatement num_cards;
+    private PreparedStatement num_loans;
 
     CustomerOperations(Connection c) {
         super(c);
@@ -28,7 +33,7 @@ class CustomerOperations extends DatabaseOperations {
                 int c_id = result.getInt("customer_id");
                 String email = result.getString("email");
                 User temp = new User(c_id, fname, lname, dob);
-                m.put(temp.full_name, temp);
+                m.put(temp.full_name+" (ID="+temp.customer_id+")", temp);
             }
             return m;
         } catch(Exception e) {
@@ -37,7 +42,7 @@ class CustomerOperations extends DatabaseOperations {
         }
     }
 
-    public ArrayList<Account> account_details_for_user(User customer) {
+    public ArrayList<Account> account_details_for_user(final User customer) {
         try {
             ArrayList<Account> accounts = new ArrayList<>();
 
@@ -63,19 +68,81 @@ class CustomerOperations extends DatabaseOperations {
         }
     }
 
-    public int num_accounts_for_user(User customer) {
+    public int num_accounts_for_user(final User customer) {
+        try {
+            ResultSet result;
+            int customer_id = customer.customer_id;
+            // System.out.println(customer_id);
+            num_accounts = con.prepareStatement("SELECT num_accounts(?) as c from dual");
+            num_accounts.setInt(1, customer_id);
+            result = num_accounts.executeQuery();
+            result.next();
+            return result.getInt("c");
+        } catch(Exception e) {
+            System.out.println(e.getMessage());
+            Helper.notify("warn", "\nUnable to retrieve count of user accounts. This feature will be unavailable.\n", true);
+            return -1;
+        }
 
     }
 
-    public int num_loans_for_user(User customer) {
-
+    public int num_loans_for_user(final User customer) {//TODO
+        try {
+            ResultSet result;
+            int customer_id = customer.customer_id;
+            num_loans = con.prepareStatement("SELECT num_loans(?) as c from dual");
+            num_loans.setInt(1, customer_id);
+            result = num_loans.executeQuery();
+            result.next();
+            return result.getInt("c");
+        } catch(Exception e) {
+            Helper.notify("warn", "\nUnable to retrieve count of user loans. This feature will be unavailable.\n", true);
+            return -1;
+        }
     }
 
-    public int num_debit_for_user(User customer) {
-
+    public int num_debit_for_user(final User customer) {
+        try {
+            ResultSet result;
+            int customer_id = customer.customer_id;
+            num_debit = con.prepareStatement("SELECT num_debit(?) as c from dual");
+            num_debit.setInt(1, customer_id);
+            result = num_debit.executeQuery();
+            result.next();
+            return result.getInt("c");
+        } catch(Exception e) {
+            Helper.notify("warn", "\nUnable to retrieve count of user debit cards. This feature will be unavailable.\n", true);
+            return -1;
+        }
     }
 
-    public int num_credit_for_user(User customer) {
-        
+    public int num_credit_for_user(final User customer) {
+        try {
+            ResultSet result;
+            int customer_id = customer.customer_id;
+            num_credit = con.prepareStatement("SELECT num_credit(?) as c from dual");
+            num_credit.setInt(1, customer_id);
+            result = num_credit.executeQuery();
+            result.next();
+            return result.getInt("c");
+        } catch(Exception e) {
+            Helper.notify("warn", "\nUnable to retrieve count of user credit cards. This feature will be unavailable.\n", true);
+            return -1;
+        }
+    }
+
+    public int num_cards_for_user(final User customer) {
+        try {
+            ResultSet result;
+            int customer_id = customer.customer_id;
+            num_cards = con.prepareStatement("SELECT num_cards(?) as c from dual");
+            num_cards.setInt(1, customer_id);
+            result = num_cards.executeQuery();
+            result.next();
+            return result.getInt("c");
+        } catch(Exception e) {
+            Helper.notify("warn", "\nUnable to retrieve count of total user cards. This feature will be unavailable.\n", true);
+            return -1;
+        }
     }
 }
