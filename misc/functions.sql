@@ -44,3 +44,22 @@ INSERT INTO BUYS(purchase_id, card_id) VALUES(new_purchase_id, c_id);
 COMMIT;
 RETURN(new_purchase_id);
 end make_purchase_credit;
+create or replace function make_purchase_debit(amt in NUMBER, p_name in VARCHAR2, c_id IN NUMBER)
+RETURN number
+IS new_purchase_id number(25,0);
+acct_lim NUMBER(15,2);
+ac_id NUMBER;
+PRAGMA AUTONOMOUS_TRANSACTION;
+BEGIN
+SELECT balance, acct_id into acct_lim, ac_id FROM debit_card NATURAL JOIN account WHERE card_id = c_id;
+--DBMS_OUTPUT.put_line(acct_lim);
+--DBMS_OUTPUT.put_line(amt);
+IF amt > acct_lim THEN RETURN(-1); END IF;
+
+UPDATE account SET balance = balance - amt WHERE acct_id = ac_id;
+commit;
+INSERT INTO purchases(purchase_name, purchase_amount) VALUES(p_name, amt) RETURNING purchase_id INTO new_purchase_id;
+INSERT INTO BUYS(purchase_id, card_id) VALUES(new_purchase_id, c_id);
+COMMIT;
+RETURN(new_purchase_id);
+end make_purchase_debit;
