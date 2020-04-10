@@ -2,6 +2,7 @@ import java.sql.*;
 import java.util.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.text.DecimalFormat;
 
 class Client extends ProjectInterface {
 	CustomerOperations ops;
@@ -100,8 +101,8 @@ class Client extends ProjectInterface {
 		do {
 			c.compute();
 			c.format_data();
-			String interface2a = "Account Deposit";
-			String interface2b = "Account withdrawal";
+			String interface2a = "Account Deposit.";
+			String interface2b = "Account Withdrawal.";
 			String interface3Alpha = "Loan Payment.";
 			String interface3Beta = "Credit Card Payment.";
 			// String interface4 = "Open a new account.";
@@ -110,6 +111,7 @@ class Client extends ProjectInterface {
 			String interface7Alpha = "Make a purchase with your cards";
 			String interface7Beta = "View activity on your cards";
 			String interface8 = "View account summary.";
+			String interface8b = "View card summary.";
 			String quit = "Return to previous.";
 			HashMap<Integer, String> paths = new HashMap<>();
 			int i = 1;
@@ -118,7 +120,7 @@ class Client extends ProjectInterface {
 				accounts = c.get_accounts();
 				paths.put(i++, interface2a);
 				paths.put(i++, interface2b);
-				// paths.put(i++, interface8);
+				paths.put(i++, interface8);
 			} else if(c.num_credit > 0) {
 				paths.put(i++, interface3Beta);
 			} else if(c.num_loans > 0 ) {
@@ -126,8 +128,9 @@ class Client extends ProjectInterface {
 			} else if(c.total_cards > 0 ) {
 				paths.put(i++, interface7Beta);
 				paths.put(i++, interface7Alpha);
+				paths.put(i++, interface8b);
 			} else {
-				Helper.notify("warn", "\nYour account does not appear to have any accounts,/loans/cards associated with it. Please choose an option from below.\n", true);
+				Helper.notify("warn", "\nYour account does not appear to have any accounts/loans/cards associated with it. Please choose an option from below.\n", true);
 
 			}
 			// paths.put(i++, interface4);
@@ -144,12 +147,18 @@ class Client extends ProjectInterface {
 					Account acct = c.accounts.get(acct_key);
 					this.display_account_metadata(acct);
 					double action_amt = 0;
-					
+					boolean rejection = false; //use this to modify the control flow below so the user sees the rejection.
 					if(choice.equals(interface2b)) {
 						action_amt = this.prompt_withdrawal(acct.balance, acct.min_balance);
-						isOK = Helper.confirm("Is the amount: "+Double.toString(action_amt)+"$ ok?");
+						if(action_amt <= 0) {
+							action_amt *= -1; //do the flip to make it a withdrawal.
+							isOK = true; //short circuit confirmation for a penalty.
+							rejection = true;
+						} else {
+							isOK = Helper.confirm("Is the amount: "+Double.toString(action_amt)+"$ ok?");
+						}
 						if(isOK)
-							ops.do_withdrawal((-1)*action_amt, this.loc.location_id, acct.acct_id);
+							ops.do_withdrawal(action_amt, this.loc.location_id, acct.acct_id);
 	
 					} else {
 						action_amt = this.prompt_deposit(acct.balance);
@@ -157,18 +166,25 @@ class Client extends ProjectInterface {
 						if(isOK)
 							ops.do_deposit(action_amt, this.loc.location_id, acct.acct_id);
 					}
-					c.get_accounts();
-					double old_bal = acct.balance;
-					Account new_acc = c.accounts.get(acct_key);
-					double new_bal = new_acc.balance;
-					double delta = new_bal - old_bal;
-					this.display_account_metadata(new_acc);
-					if(delta <= 0) {
-						System.out.println("Balance change: "+Helper.notify_str("yellow",delta,false)+"$");
-					} else {
-						System.out.println("Balance change: +"+Helper.notify_str("green",delta,false)+"$");
+					if(!rejection) {
+						c.get_accounts();
+						double old_bal = acct.balance;
+						Account new_acc = c.accounts.get(acct_key);
+						double new_bal = new_acc.balance;
+						double delta = new_bal - old_bal;
+						DecimalFormat df = new DecimalFormat("#.##");
+						// handle rounding:
+						// https://stackoverflow.com/questions/2808535/round-a-double-to-2-decimal-places
+						delta = Double.valueOf(df.format(delta));
+						this.display_account_metadata(new_acc);
+						if(delta <= 0) {
+							System.out.println("Balance change: "+Helper.notify_str("yellow",delta,false)+"$");
+						} else {
+							System.out.println("Balance change: +"+Helper.notify_str("green",delta,false)+"$");
+						}
+						System.out.println("\n-------------------------------------------------------\n");
 					}
-					System.out.println("\n-------------------------------------------------------\n");
+
 				} else if(choice.equals(interface3Alpha)) {
 					
 				} else if(choice.equals(interface3Beta)) {
@@ -179,6 +195,13 @@ class Client extends ProjectInterface {
 	
 				} else if(choice.equals(quit)) {
 					cont = false;
+				} else if(choice.equals(interface8)) {
+					c.compute(); //recompute user data.
+					c.user_metadata();
+					c.account_metadata();
+				} else if(choice.equals(interface8b)) {
+					c.compute();
+					c.card_metadata();
 				}
 				break;
 			}while(!isOK);
@@ -209,6 +232,14 @@ class Client extends ProjectInterface {
 				Helper.notify("warn", "You cannot enter a negative/zero amount.", true);
 			} else if(amt > curr_bal-min_balance) {
 				Helper.notify("warn", "You cannot withdraw more than your account balance, including the minimum balance.", true);
+				
+				if(curr_bal >= 10.0) {
+					Helper.notify("error", "Your deposit has been rejected, and a 5$ penalty has been imposed.", true);
+					return -5.0;
+				} else if(min_balance <= curr_bal * 0.1){
+					Helper.notify("error", "Your deposit has been rejected, a penalty of "+Double.toString(curr_bal * 0.1)+"$ has been imposed.", true);
+					return curr_bal * -0.1;
+				}
 			} else return amt;
 		}while(!correct);
 		return 0;

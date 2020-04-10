@@ -1,6 +1,8 @@
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 class User {
     public int customer_id;
     public String first_name;
@@ -13,6 +15,9 @@ class User {
     public int num_loans = 0;
     public int total_cards = 0;
     public HashMap<String, Account> accounts;
+    public ArrayList<Account> user_accounts;
+    public ArrayList<Debit> user_debit;
+    public ArrayList<Credit> user_credit;
 
     User(int c, String f, String l, Date d) {
         customer_id = c;
@@ -22,13 +27,23 @@ class User {
         full_name = first_name +" "+last_name;
     }
 
+    @Override
+    public String toString() {
+        return full_name + "(ID="+Integer.toString(customer_id)+")";
+    }
     public void compute() {
         CustomerOperations sync = new CustomerOperations(Helper.con());
         num_accounts = sync.num_accounts_for_user(this);
         num_credit = sync.num_credit_for_user(this);
         num_debit = sync.num_debit_for_user(this);
         total_cards = sync.num_cards_for_user(this);
+        if(num_credit > 0 ) {
+            user_credit = sync.user_credit_cards(this);
+        } else if(num_debit > 0) {
+            user_debit = sync.user_debit_cards(this);
+        }
         // num_loans = sync.num_loans_for_user(this);
+        user_accounts = sync.account_details_for_user(this);
     }
 
 
@@ -94,6 +109,48 @@ class User {
         }
 
         return ret;
+    }
+
+    public void user_metadata() {
+        Helper.notify("heading", "\nUser metadata for: "+this.toString(), true);
+        this.format_data();
+
+    }
+
+    public void account_metadata() {
+
+        for(Account a : this.user_accounts) {
+            DateFormat date_fmt = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss");
+            String cdate = date_fmt.format(a.creation_date);
+            String adate = date_fmt.format(a.added_date);
+            Helper.notify("heading", a.toString(), true);
+            System.out.println("+Creation date: "+cdate);
+            System.out.println("+Add date: "+adate);
+            System.out.println("+Current interest rate:\t "+ Double.toString(a.interest)+"%");
+            System.out.println("+Current balance:\t "+ Double.toString(a.balance)+"$");
+            if(a.min_balance != -1) {
+                System.out.println("+Minimum balance:\t "+Double.toString(a.min_balance)+"$");
+            }
+        }
+    }
+
+    public void credit_metadata() {
+        Helper.notify("heading", "Credit card metadata for "+this.toString(), true);
+        for(Credit c : user_credit) {
+            c.metadata();
+        }
+    }
+
+    public void debit_metadata() {
+        Helper.notify("heading", "Debit card metadata for "+this.toString(), true);
+        for(Debit d : user_debit) {
+            d.metadata();
+        }
+    }
+
+    public void card_metadata() {
+        this.debit_metadata();
+        this.credit_metadata();
     }
 
 

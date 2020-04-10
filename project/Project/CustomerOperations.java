@@ -9,6 +9,9 @@ class CustomerOperations extends DatabaseOperations {
     private PreparedStatement num_debit;
     private PreparedStatement num_cards;
     private PreparedStatement num_loans;
+    private PreparedStatement do_deposit;
+    private PreparedStatement get_debit;
+    private PreparedStatement get_credit;
 
     CustomerOperations(final Connection c) {
         super(c);
@@ -17,7 +20,15 @@ class CustomerOperations extends DatabaseOperations {
     public void test() {
         // System.out.println("hi");
     }
+    public HashMap<String, User> get_user_by_id() {
+        return null;
+        //TODO
+    }
 
+    public HashMap<String, User> get_user_by_name() {
+        return null;
+        //TODO
+    }
     public HashMap<String, User> list_all_users() {
         /* get all users for use in a promptmap */
         try {
@@ -153,7 +164,8 @@ class CustomerOperations extends DatabaseOperations {
         }
     }
 
-    public boolean do_withdrawal(final double amount, final int loc_id, final int acct_id) {
+    public boolean do_withdrawal(double amount, final int loc_id, final int acct_id) {
+        amount *= -1;
         try {
             ResultSet result;
             num_cards = con.prepareStatement("SELECT do_account_action(?, ?, ?) as c from dual");
@@ -183,6 +195,57 @@ class CustomerOperations extends DatabaseOperations {
         } catch(Exception e) {
             Helper.notify("warn", "\nUnable to do an account deposit.\n", true);
             return false;
+        }
+    }
+
+    public ArrayList<Debit> user_debit_cards(final User c) {
+        //since we did the check previously, assume the user has a debit card.
+        ArrayList<Debit> accumulator = new ArrayList<>();
+        try {
+            ResultSet result;
+            get_debit = con.prepareStatement("SELECT to_char(pin), to_char(card_id), to_char(cvc), card_number FROM DEBIT_CARD NATURAL JOIN CARD NATURAL JOIN CUSTOMER_CARDS WHERE customer_id = ?");
+            get_debit.setInt(1, c.customer_id);
+            result = num_cards.executeQuery();
+            while(result.next()) {
+                String card_id = result.getString("card_id");
+                String pin = result.getString("pin");
+                String cvc = result.getString("cvc");
+                String card_num = result.getString("card_number");
+                int acct_id = result.getInt("acct_id");
+                
+                Debit temp = new Debit(card_id, cvc, card_num, pin, acct_id);
+                accumulator.add(temp);
+            }
+            return accumulator;
+        } catch(Exception e) {
+            Helper.notify("warn", "\nUnable to return debit card data.\n", true);
+            return null;
+        }
+    }
+
+    public ArrayList<Credit> user_credit_cards(final User c) {
+        //since we did the check previously, assume the user has a credit card.
+        ArrayList<Credit> accumulator = new ArrayList<>();
+        try {
+            ResultSet result;
+            get_debit = con.prepareStatement("SELECT interest, to_char(card_id), to_char(cvc), card_number, balance, running_balance FROM DEBIT_CARD NATURAL JOIN CARD NATURAL JOIN CUSTOMER_CARDS WHERE customer_id = ?");
+            get_debit.setInt(1, c.customer_id);
+            result = num_cards.executeQuery();
+            while(result.next()) {
+                String card_id = result.getString("card_id");
+                String cvc = result.getString("cvc");
+                String card_num = result.getString("card_number");
+                double balance = result.getDouble("balance");
+                double running_balance = result.getDouble("running_balance");
+                double interest = result.getDouble("interest");
+                
+                Credit temp = new Credit(card_id, cvc, card_num, interest, balance, running_balance);
+                accumulator.add(temp);
+            }
+            return accumulator;
+        } catch(Exception e) {
+            Helper.notify("warn", "\nUnable to return credit card data.\n", true);
+            return null;
         }
     }
 }

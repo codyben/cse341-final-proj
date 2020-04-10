@@ -112,7 +112,9 @@ class Project{
             
             Helper.set_con(con); //don't reinitialize a connection, so set it here.
             
+            System.out.println("Loading required metadata...");
             Helper.compute_general(); //this most likely isn't going to change, so compute once in beginning.
+            System.out.println("Metadata load complete.");
 
 
             Helper.notify("success", "\n\n** Welcome to Nickel Savings Bank **", true);

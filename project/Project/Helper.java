@@ -111,7 +111,7 @@ class Helper {
 
     public static Integer prompt_choice() {
         Scanner scnr = new Scanner(System.in); 
-        System.out.println("Enter number of your choice: ");
+        System.out.print("Enter number of your choice: ");
         if(scnr.hasNextInt()) 
             return scnr.nextInt();
         else 
