@@ -27,3 +27,20 @@ SELECT balance into new_bal FROM account where acct_id = a_id;
 commit;
 RETURN(new_bal);
 END do_account_action;
+
+create or replace function make_purchase_credit(amt in NUMBER, p_name in VARCHAR2, c_id in NUMBER)
+RETURN number
+IS new_purchase_id number(25,0);
+c_lim NUMBER(10,2);
+r_bal NUMBER(10,2);
+PRAGMA AUTONOMOUS_TRANSACTION;
+BEGIN
+SELECT credit_limit, running_balance into c_lim, r_bal FROM credit_card WHERE card_id = c_id;
+-- error out if insufficient funds
+IF r_bal + amt > c_lim THEN RETURN(-1); END IF;
+UPDATE CREDIT_CARD SET RUNNING_BALANCE = r_bal + amt WHERE card_id = c_id;
+INSERT INTO purchases(purchase_name, purchase_amount) VALUES(p_name, amt) RETURNING purchase_id INTO new_purchase_id;
+INSERT INTO BUYS(purchase_id, card_id) VALUES(new_purchase_id, c_id);
+COMMIT;
+RETURN(new_purchase_id);
+end make_purchase_credit;
