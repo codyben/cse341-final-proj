@@ -1,6 +1,8 @@
 import java.sql.*;  
 import java.io.*;
 import java.util.*;
+
+
 class Project{  
 
     private static String username;
@@ -35,7 +37,34 @@ class Project{
         }
     }
 
-    private static boolean pick_role() {
+    private static boolean customer() throws UnrecoverableException{
+        Client client = new Client("Client", "After confirmation, select a method to view a user from below.");
+        client.launch();
+        Location l = Client.force_location();
+        if(l == null) {
+            return true; //shoot the user back to main prompt.
+        }
+        // boolean good_location = client.confirm();
+        // if(!good_location) {
+        //     l = Client.force_location();
+        // }
+        System.out.println("Your current location is: "+Helper.notify_str("notify", l.toString(), true));
+        boolean sentinel = client.confirm();
+        if(!sentinel) {
+            return true; //have the user pick another role.
+        }
+        client.provision(new CustomerOperations(Helper.con()));
+        do {
+            client.set_location(l);
+            System.out.println("Your current location is: "+Helper.notify_str("notify", l.toString(), true));
+            User customer = client.divergent_paths();
+            if(customer == null) return customer();
+            sentinel = client.intent(customer);
+        }while(sentinel);
+        return true; //return a true to start cycle over again.
+    }
+
+    private static boolean pick_role() throws UnrecoverableException {
         System.out.println("\n");
         HashMap<Integer, String> use_cases = new HashMap<>();
             use_cases.put(1, "Bank Management");
@@ -52,17 +81,7 @@ class Project{
                 mgt.provision(new ManagementOperations(Helper.con()));
                 return true;
             } else if(choice.equals("Client")) {
-                Client client = new Client("Client", "After confirmation, select a method to view a user from below.");
-                client.launch();
-                boolean sentinel = client.confirm();
-
-                if(!sentinel) {
-                    return true; //have the user pick another role.
-                }
-                client.provision(new CustomerOperations(Helper.con()));
-                User customer = client.divergent_paths();
-                client.intent(customer);
-                return true;
+                return customer();
             } else if(choice.equals("Quit")) {
                 Helper.exit();
             }
@@ -91,7 +110,11 @@ class Project{
                 } 
             }); 
             
-            Helper.set_con(con);
+            Helper.set_con(con); //don't reinitialize a connection, so set it here.
+            
+            Helper.compute_general(); //this most likely isn't going to change, so compute once in beginning.
+
+
             Helper.notify("success", "\n\n** Welcome to Nickel Savings Bank **", true);
             boolean status = true;
             do {
@@ -99,10 +122,18 @@ class Project{
             } while(status);
 
             Helper.exit();
+        }catch(UnrecoverableException ue) {
+            ue.printStackTrace();
+            Helper.notify("error", "An unrecoverable error has occurred. The program will now exit.", true);
+            System.exit(1);
         } catch(Exception e) {
             String msg = e.getMessage();
             // e.printStackTrace();
             System.out.println(msg);
+            if(msg == null) {
+                Helper.notify("error", "An unrecoverable error has occurred. The program will now exit.", true);
+                System.exit(1);
+            }
             if(msg.contains("01017")) {
                 System.out.println();
                 Helper.notify("error", "Invalid login credentials.", true);

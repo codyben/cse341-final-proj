@@ -1,4 +1,6 @@
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 class User {
     public int customer_id;
     public String first_name;
@@ -10,6 +12,7 @@ class User {
     public int num_debit = 0;
     public int num_loans = 0;
     public int total_cards = 0;
+    public HashMap<String, Account> accounts;
 
     User(int c, String f, String l, Date d) {
         customer_id = c;
@@ -74,6 +77,23 @@ class User {
         System.out.println(credit);
         System.out.println(debit);
         System.out.println(card);
+    }
+
+    public HashMap<Integer, String> get_accounts() {
+        /* Get a list of all accounts a user has, categorize and store them for future use. Additionally, build a promptmap */
+        accounts = new HashMap<>();
+        HashMap<Integer, String> ret = new HashMap<>();
+        CustomerOperations sync = new CustomerOperations(Helper.con());
+        ArrayList<Account> deets = sync.account_details_for_user(this);
+        int i = 1;
+        for (Account a : deets) {
+            // System.out.println(a.toString());
+            String key = a.toString();
+            ret.put(i++, key);
+            accounts.put(key, a);
+        }
+
+        return ret;
     }
 
 

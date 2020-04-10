@@ -1,8 +1,10 @@
 import java.io.*;
+import java.security.UnrecoverableEntryException;
 import java.util.*;
 import java.sql.*;  
 class Helper {
     private static Connection con;
+    private static GenOperations ops;
     public static void set_con(Connection c) {
         con = c;
     }
@@ -11,7 +13,22 @@ class Helper {
         return con;
     }
 
+    public static final GenOperations compute_general() throws UnrecoverableException {
+        /* use a singleton to compute all the branches/locations/atms */
+        try {
+            if(Helper.ops == null) {
+                Helper.ops = new GenOperations(con);
+            }
+
+            return Helper.ops;
+        } catch(Exception e) {
+            // e.printStackTrace();
+            throw new UnrecoverableException();
+        }
+    }
+
     public static void cleanup() {
+        /* handle a graceful halt */
         try {
             Helper.con.close();
             Helper.notify("green", "Successfully closed connection.", true);
@@ -53,8 +70,18 @@ class Helper {
         else {
             Helper.notify("error", "You did not enter an integer. Try again.", true);
             return get_int(msg);
-        } 
-        
+        }  
+    }
+
+    public static Double get_double(final String msg) {
+        Scanner scnr = new Scanner(System.in); 
+        System.out.println(msg);
+        if(scnr.hasNextDouble()) 
+            return scnr.nextDouble();
+        else {
+            Helper.notify("error", "You did not enter a valid amount. Try again.", true);
+            return get_double(msg);
+        }  
     }
     public static boolean confirm() {
         Helper.notify("warn", "\nDo you wish to proceed?\n", true);
@@ -92,6 +119,17 @@ class Helper {
 
     }
 
+    private static void append_quit(HashMap<Integer, String> results) {
+
+    }
+    /**
+     * Provide an easy way to prompt the user with a list of choice.
+     * Used extensively throughout project.
+     * Original function is a carryover from previous Homework.
+     * @param results
+     * @param msg
+     * @return String
+     */
     public static String get_choice(HashMap<Integer, String> results, String msg) {
         if(msg == null) {
             msg = "Choose an option below.";
@@ -112,7 +150,12 @@ class Helper {
             return results.get(choice);
         }
     }
-
+    /**
+     * Add some color to messages presented to user.
+     * @param color
+     * @param msg
+     * @param n
+     */
     public static void notify(String color, String msg, boolean n) {
         String code = "";
         String reset = "\u001B[0m";
@@ -208,6 +251,39 @@ class Helper {
 
     public static String notify_str(String color, int ms, boolean n) {
         String msg = Integer.toString(ms);
+        String code = "";
+        String reset = "\u001B[0m";
+        String ret = "";
+        switch(color.toLowerCase()) {
+            case "error":
+            case "red":
+                code = "\u001B[31m";
+                break;
+
+            case "success":
+            case "green": code = "\u001B[32m"; break;
+            case "warn":
+            case "yellow": code = "\u001B[33m"; break;
+            case "notify":
+            case "heading":
+            case "cyan": code = "\u001B[36m"; break;
+        }
+
+        if(!code.equals("")) {
+            ret = code+msg+reset;
+        } else {
+            ret = msg;
+        }
+
+        if(n) {
+            ret += "\n";
+        }
+
+        return ret;
+    }
+
+    public static String notify_str(String color, double ms, boolean n) {
+        String msg = Double.toString(ms);
         String code = "";
         String reset = "\u001B[0m";
         String ret = "";

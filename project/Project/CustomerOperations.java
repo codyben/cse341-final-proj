@@ -10,15 +10,16 @@ class CustomerOperations extends DatabaseOperations {
     private PreparedStatement num_cards;
     private PreparedStatement num_loans;
 
-    CustomerOperations(Connection c) {
+    CustomerOperations(final Connection c) {
         super(c);
     }
 
     public void test() {
-        System.out.println("hi");
+        // System.out.println("hi");
     }
 
     public HashMap<String, User> list_all_users() {
+        /* get all users for use in a promptmap */
         try {
             HashMap<String, User> m = new HashMap<>();
             ResultSet result;
@@ -43,12 +44,13 @@ class CustomerOperations extends DatabaseOperations {
     }
 
     public ArrayList<Account> account_details_for_user(final User customer) {
+        /* list account metadata */
         try {
             ArrayList<Account> accounts = new ArrayList<>();
 
             ResultSet result;
 
-            account_details = con.prepareStatement("SELECT * FROM ACCOUNT NATURAL JOIN HOLDS WHERE customer_id = ?");
+            account_details = con.prepareStatement("SELECT acct_id, balance, interest, creation_date, customer_id, add_date, nvl(min_balance, -1) as min_balance FROM ACCOUNT NATURAL JOIN HOLDS NATURAL LEFT OUTER JOIN CHECKING_ACCOUNT WHERE customer_id = ?");
             account_details.setInt(1, customer.customer_id);
             result = account_details.executeQuery();
             while(result.next()) {
@@ -57,7 +59,8 @@ class CustomerOperations extends DatabaseOperations {
                 double interest = result.getDouble("interest");
                 java.util.Date creation_date = result.getDate("creation_date");
                 java.util.Date add_date = result.getDate("add_date");
-                Account temp = new Account(balance, interest, creation_date, add_date);
+                double min_balance = result.getDouble("min_balance");
+                Account temp = new Account(balance, interest, creation_date, add_date, min_balance, acct_id);
                 accounts.add(temp);
             }
             return accounts;
@@ -69,6 +72,7 @@ class CustomerOperations extends DatabaseOperations {
     }
 
     public int num_accounts_for_user(final User customer) {
+        /* get the number of accounts held by a user */
         try {
             ResultSet result;
             int customer_id = customer.customer_id;
@@ -102,6 +106,7 @@ class CustomerOperations extends DatabaseOperations {
     }
 
     public int num_debit_for_user(final User customer) {
+        /* count user debit cards */
         try {
             ResultSet result;
             int customer_id = customer.customer_id;
@@ -117,6 +122,7 @@ class CustomerOperations extends DatabaseOperations {
     }
 
     public int num_credit_for_user(final User customer) {
+        /* get a count of a user's credit cards */
         try {
             ResultSet result;
             int customer_id = customer.customer_id;
@@ -132,6 +138,7 @@ class CustomerOperations extends DatabaseOperations {
     }
 
     public int num_cards_for_user(final User customer) {
+        /* get total number of cards */
         try {
             ResultSet result;
             int customer_id = customer.customer_id;
@@ -143,6 +150,39 @@ class CustomerOperations extends DatabaseOperations {
         } catch(Exception e) {
             Helper.notify("warn", "\nUnable to retrieve count of total user cards. This feature will be unavailable.\n", true);
             return -1;
+        }
+    }
+
+    public boolean do_withdrawal(final double amount, final int loc_id, final int acct_id) {
+        try {
+            ResultSet result;
+            num_cards = con.prepareStatement("SELECT do_account_action(?, ?, ?) as c from dual");
+            num_cards.setDouble(1, amount);
+            num_cards.setInt(2, loc_id);
+            num_cards.setInt(3, acct_id);
+            result = num_cards.executeQuery();
+            result.next();
+            if(result.getInt("c") < 0 ) return false; else return true; 
+        } catch(Exception e) {
+            Helper.notify("warn", "\nUnable to do an account withdrawal.\n", true);
+            return false;
+        }
+    }
+
+    public boolean do_deposit(final double amount, final int loc_id, final int acct_id) {
+        
+        try {
+            ResultSet result;
+            num_cards = con.prepareStatement("SELECT do_account_action(?, ?, ?) as c from dual");
+            num_cards.setDouble(1, amount);
+            num_cards.setInt(2, loc_id);
+            num_cards.setInt(3, acct_id);
+            result = num_cards.executeQuery();
+            result.next();
+            if(result.getInt("c") < 0 ) return false; else return true; 
+        } catch(Exception e) {
+            Helper.notify("warn", "\nUnable to do an account deposit.\n", true);
+            return false;
         }
     }
 }
