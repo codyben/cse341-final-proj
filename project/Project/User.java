@@ -135,22 +135,29 @@ class User {
     }
 
     public void credit_metadata() {
-        Helper.notify("heading", "Credit card metadata for "+this.toString(), true);
+        Helper.notify("heading", "\nCredit card metadata for "+this.toString()+"\n", true);
+        // if(user_credit == null) return;
         for(Credit c : user_credit) {
             c.metadata();
         }
     }
 
     public void debit_metadata() {
-        Helper.notify("heading", "Debit card metadata for "+this.toString(), true);
+        Helper.notify("heading", "\nDebit card metadata for "+this.toString()+"\n", true);
         for(Debit d : user_debit) {
             d.metadata();
         }
     }
 
-    public void card_metadata() {
-        this.debit_metadata();
-        this.credit_metadata();
+    public void card_metadata() throws UnrecoverableException {
+        try {
+            if(num_debit > 0) this.debit_metadata();
+            if(num_credit > 0) this.credit_metadata();
+
+        }catch(Exception e) {
+            e.printStackTrace();
+            throw new UnrecoverableException();
+        }
     }
 
 

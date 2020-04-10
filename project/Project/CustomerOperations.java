@@ -203,13 +203,13 @@ class CustomerOperations extends DatabaseOperations {
         ArrayList<Debit> accumulator = new ArrayList<>();
         try {
             ResultSet result;
-            get_debit = con.prepareStatement("SELECT to_char(pin), to_char(card_id), to_char(cvc), card_number FROM DEBIT_CARD NATURAL JOIN CARD NATURAL JOIN CUSTOMER_CARDS WHERE customer_id = ?");
+            get_debit = con.prepareStatement("SELECT to_char(pin) as p, to_char(card_id) as c_id, to_char(cvc) as c, card_number, acct_id FROM DEBIT_CARD NATURAL JOIN CARD NATURAL JOIN CUSTOMER_CARDS WHERE customer_id = ?");
             get_debit.setInt(1, c.customer_id);
-            result = num_cards.executeQuery();
+            result = get_debit.executeQuery();
             while(result.next()) {
-                String card_id = result.getString("card_id");
-                String pin = result.getString("pin");
-                String cvc = result.getString("cvc");
+                String card_id = result.getString("c_id");
+                String pin = result.getString("p");
+                String cvc = result.getString("c");
                 String card_num = result.getString("card_number");
                 int acct_id = result.getInt("acct_id");
                 
@@ -218,6 +218,7 @@ class CustomerOperations extends DatabaseOperations {
             }
             return accumulator;
         } catch(Exception e) {
+            e.printStackTrace();
             Helper.notify("warn", "\nUnable to return debit card data.\n", true);
             return null;
         }
@@ -228,14 +229,14 @@ class CustomerOperations extends DatabaseOperations {
         ArrayList<Credit> accumulator = new ArrayList<>();
         try {
             ResultSet result;
-            get_debit = con.prepareStatement("SELECT interest, to_char(card_id), to_char(cvc), card_number, balance, running_balance FROM DEBIT_CARD NATURAL JOIN CARD NATURAL JOIN CUSTOMER_CARDS WHERE customer_id = ?");
-            get_debit.setInt(1, c.customer_id);
-            result = num_cards.executeQuery();
+            get_credit = con.prepareStatement("SELECT interest, to_char(card_id) as card_id, to_char(cvc) as cvc, card_number, balance_due, running_balance FROM CREDIT_CARD NATURAL JOIN CARD NATURAL JOIN CUSTOMER_CARDS WHERE customer_id = ?");
+            get_credit.setInt(1, c.customer_id);
+            result = get_credit.executeQuery();
             while(result.next()) {
                 String card_id = result.getString("card_id");
                 String cvc = result.getString("cvc");
                 String card_num = result.getString("card_number");
-                double balance = result.getDouble("balance");
+                double balance = result.getDouble("balance_due");
                 double running_balance = result.getDouble("running_balance");
                 double interest = result.getDouble("interest");
                 
@@ -244,6 +245,7 @@ class CustomerOperations extends DatabaseOperations {
             }
             return accumulator;
         } catch(Exception e) {
+            e.printStackTrace();
             Helper.notify("warn", "\nUnable to return credit card data.\n", true);
             return null;
         }

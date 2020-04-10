@@ -96,7 +96,7 @@ class Client extends ProjectInterface {
 		return data_container.locations.get(choice_key);
 	}
 
-	public boolean intent(final User c) {
+	public boolean intent(final User c) throws UnrecoverableException{
 		boolean cont = true;
 		do {
 			c.compute();
