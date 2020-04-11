@@ -64,3 +64,16 @@ INSERT INTO BUYS(purchase_id, card_id) VALUES(new_purchase_id, c_id);
 COMMIT;
 RETURN(new_purchase_id);
 end make_purchase_debit;
+
+create or replace function create_credit_card(card_num IN VARCHAR2, sec_code in NUMBER, interest IN NUMBER, r_bal in NUMBER, c_lim IN NUMBER, cust_od IN NUMBER)
+RETURN number
+IS c_id NUMBER(25,0);
+PRAGMA AUTONOMOUS_TRANSACTION;
+BEGIN
+INSERT INTO card(cvc, card_number) VALUES(sec_code,card_num) RETURNING card_id INTO c_id;
+INSERT INTO credit_card(card_id, interest, running_balance, credit_limit) VALUES(c_id, interest, r_bal, c_lim);
+COMMIT;
+INSERT INTO customer_cards(card_id, customer_id) VALUES(c_id, cust_od);
+COMMIT;
+RETURN(c_id);
+end create_credit_card;
