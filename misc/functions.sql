@@ -77,3 +77,17 @@ INSERT INTO customer_cards(card_id, customer_id) VALUES(c_id, cust_od);
 COMMIT;
 RETURN(c_id);
 end create_credit_card;
+
+create or replace function create_debit_card(card_num IN VARCHAR2, sec_code in NUMBER, p_code in NUMBER, ac_id IN NUMBER, cust_od IN NUMBER)
+RETURN number
+IS c_id NUMBER(25,0);
+PRAGMA AUTONOMOUS_TRANSACTION;
+BEGIN
+INSERT INTO card(cvc, card_number) VALUES(sec_code,card_num) RETURNING card_id INTO c_id;
+INSERT INTO debit_card(card_id, pin, acct_id) VALUES(c_id, p_code, ac_id);
+COMMIT;
+--explicitly commit since we need this data to be present here.
+INSERT INTO customer_cards(card_id, customer_id) VALUES(c_id, cust_od);
+COMMIT;
+RETURN(c_id);
+end create_debit_card;
