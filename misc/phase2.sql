@@ -129,7 +129,7 @@ create table credit_card
 (
     card_id NUMBER(10) REFERENCES card(card_id) not null,
     interest DECIMAL(6,5) not null,
-    balance_due AS (card_id * (1+interest)),
+    balance_due AS (running_balance * (1+interest)),
     running_balance FLOAT(63) default 0 not null,
     constraint credit_pk PRIMARY KEY (card_id)
 );

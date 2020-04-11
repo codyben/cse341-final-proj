@@ -44,6 +44,7 @@ INSERT INTO BUYS(purchase_id, card_id) VALUES(new_purchase_id, c_id);
 COMMIT;
 RETURN(new_purchase_id);
 end make_purchase_credit;
+
 create or replace function make_purchase_debit(amt in NUMBER, p_name in VARCHAR2, c_id IN NUMBER)
 RETURN number
 IS new_purchase_id number(25,0);
