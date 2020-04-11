@@ -98,29 +98,35 @@ class Client extends ProjectInterface {
 
 	public boolean intent(final User c) throws UnrecoverableException{
 		boolean cont = true;
+		boolean isAtBranch = false;
+		if(this.loc instanceof Branch) {
+			isAtBranch = true; //keep this here so we can do some filtering.
+		}
 		do {
 			c.compute();
 			c.format_data();
-			// String interface1 = "Refresh account details.";
-			String interface2a = "Account Deposit.";
-			String interface2b = "Account Withdrawal.";
-			String interface3Alpha = "Loan Payment.";
-			String interface3Beta = "Credit Card Payment.";
-			String interface4 = "Open a new account.";
-			// String interface5 = "Obtain a new / replacement credit card";
-			// String interface6 = "Take out a new loan";
-			String interface7Alpha = "Make a purchase with your cards.";
-			String interface7Beta = "View activity on your cards.";
-			String interface5a = "Obtain a replacement card.";
-			String interface5b = "Request a card.";
-			String interface8 = "View account summary.";
-			String interface8b = "View card summary.";
-			String quit = "Return to previous.";
+			// final String interface1 = "Refresh account details.";
+			final String interface2a = "Account Deposit.";
+			final String interface2b = "Account Withdrawal.";
+			final String interface3Alpha = "Loan Payment.";
+			final String interface3Beta = "Credit Card Payment.";
+			final String interface4 = "Open a new account.";
+			// final String interface5 = "Obtain a new / replacement credit card";
+			// final String interface6 = "Take out a new loan";
+			final String interface7Alpha = "Make a purchase with your cards.";
+			final String interface7Beta = "View activity on your cards.";
+			final String interface5a = "Obtain a replacement card.";
+			final String interface5b = "Request a card.";
+			final String interface8 = "View account summary.";
+			final String interface8b = "View card summary.";
+			final String quit = "Return to previous.";
 			HashMap<Integer, String> paths = new HashMap<>();
 			int i = 1;
 			HashMap<Integer, String> accounts = new HashMap<>();
 			paths.put(i++, interface5b); //always allow a user to request a card.
 			paths.put(i++, interface4); //always allow a user to open a new account.
+			
+			/* Dynamically create a menu based on the user's current data */
 			if(c.num_accounts > 0 ) {
 				accounts = c.get_accounts();
 				paths.put(i++, interface2a);
@@ -226,7 +232,7 @@ class Client extends ProjectInterface {
 				} else if(choice.equals(interface5a)) {
 					//obtain a replacement card.
 				} else if(choice.equals(interface5b)) {
-					//request a card.
+					c.request_card(ops);
 				} else if(choice.equals(interface4)) {
 					//open a new account.
 				}

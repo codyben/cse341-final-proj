@@ -1,11 +1,11 @@
 public class Credit extends Card {
     public double interest;
-    public double balance_due;
+    public Double balance_due;
     public double running_balance;
     public double credit_limit;
 
-    Credit(String card_id, String cvc, String card_number, double interest, double balance_due, double running_balance, double c_lim) {
-        super(card_id, cvc, card_number);
+    Credit(String card_id, String cvc, String card_number, double interest, Double balance_due, double running_balance, double c_lim, int cust_id) {
+        super(card_id, cvc, card_number, cust_id);
         this.interest = interest;
         this.balance_due = balance_due;
         this.running_balance = running_balance;

@@ -10,13 +10,13 @@ class ProjectInterface {
 		expository = e;
 	}
 
-	public void launch() {
+	final public void launch() {
 		System.out.println("\n");
 		Helper.notify("notify", "Hello! Welcome to the "+interface_name+" interface.\n", true);
 		Helper.notify("notify", expository, true);
 	}
 
-	public boolean confirm() {
+	final public boolean confirm() {
 		return Helper.confirm();
 	}
 

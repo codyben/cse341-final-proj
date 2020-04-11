@@ -3,6 +3,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.text.DecimalFormat;
 class User {
     public int customer_id;
     public String first_name;
@@ -98,7 +99,7 @@ class User {
         System.out.println(card);
     }
 
-    public HashMap<Integer, String> get_accounts() {
+    public final HashMap<Integer, String> get_accounts() {
         /* Get a list of all accounts a user has, categorize and store them for future use. Additionally, build a promptmap */
         accounts = new HashMap<>();
         HashMap<Integer, String> ret = new HashMap<>();
@@ -123,7 +124,7 @@ class User {
 
     public void account_metadata() {
 
-        for(Account a : this.user_accounts) {
+        for(final Account a : this.user_accounts) {
             DateFormat date_fmt = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss");
             String cdate = date_fmt.format(a.creation_date);
             String adate = date_fmt.format(a.added_date);
@@ -136,6 +137,32 @@ class User {
                 System.out.println("+Minimum balance:\t "+Double.toString(a.min_balance)+"$");
             }
         }
+    }
+
+    public Account prompt_checking() {
+        HashMap<Integer, String> promptmap = new HashMap<>();
+        int i = 1;
+        for(final Account a : user_accounts) {
+            if(a.min_balance < 0) {
+                promptmap.put(i++, a.toString());
+            }
+        }
+
+        String acc_choice = Helper.get_choice(promptmap, "Choose a Checking Account from below.");
+        return accounts.get(acc_choice);
+    }
+
+    public Credit credit_card_prompt() {
+        HashMap<Integer, String> promptmap = new HashMap<>();
+        int i = 1;
+        for(final Credit c : user_credit) {
+            promptmap.put(i++, c.toString());
+        }
+        return null;    
+    }
+
+    public Debit debit_card_prompt() {
+        return null;
     }
 
     public HashMap<Integer, String> card_promptmap() {
@@ -166,14 +193,14 @@ class User {
     public void credit_metadata() {
         Helper.notify("heading", "\nCredit card metadata for "+this.toString()+"\n", true);
         // if(user_credit == null) return;
-        for(Credit c : user_credit) {
+        for(final Credit c : user_credit) {
             c.metadata();
         }
     }
 
     public void debit_metadata() {
         Helper.notify("heading", "\nDebit card metadata for "+this.toString()+"\n", true);
-        for(Debit d : user_debit) {
+        for(final Debit d : user_debit) {
             d.metadata();
         }
     }
@@ -187,6 +214,72 @@ class User {
             e.printStackTrace();
             throw new UnrecoverableException();
         }
+    }
+
+    public boolean replace_card() {
+        return false;
+    }
+
+    public boolean request_card(final CustomerOperations ops) throws UnrecoverableException{
+        /* Let the user pick the card they want, then delegate the task. */
+        HashMap<Integer, String> promptmap = new HashMap<>();
+        String credit = "Request a new Credit Card.";
+        String debit = "Request a new Debit Card.";
+        promptmap.put(1, credit);
+        if(num_accounts <= 0) {
+            Helper.notify("warn", "A Debit Card cannot be requested as you have no accounts.", true);
+        } else {
+            promptmap.put(2, debit);
+        }
+        
+        String choice = Helper.get_choice(promptmap,null);
+        boolean result = false;
+        if(choice.equals(credit)) {
+            
+            result = this.create_credit_card(ops);
+        } else if(choice.equals(debit)) {
+            Account a = this.prompt_checking();
+            result = this.create_debit_card(ops, a);
+        }
+
+        return result;
+
+
+
+    }
+
+    public boolean create_debit_card(final CustomerOperations ops, final Account a) throws UnrecoverableException{
+        final GenOperations gops = Helper.compute_general();
+        final String pin = gops.compute_pin();
+        final String card_num = gops.compute_card_num();
+        final String cvc = gops.compute_cvc();
+        Debit new_card = new Debit(null, cvc, card_num,  pin, a.acct_id); //create a new "debit card" that we can serialize into the db.
+        ops.create_debit_card(new_card);
+        return false;
+
+    }
+
+    public boolean create_credit_card(final CustomerOperations ops) throws UnrecoverableException {
+        final GenOperations gops = Helper.compute_general();
+        final String card_num = gops.compute_card_num();
+        final String cvc = gops.compute_cvc();
+        double interest; 
+        double c_lim; 
+        DecimalFormat df = new DecimalFormat("#.0#");
+        boolean confirm = false;
+        String conf_warn = Helper.notify_str("warn", "\nDo you wish to proceed?\n", false);
+        // handle rounding:
+        do {
+            interest = Helper.get_double("Please enter the interest rate: %");
+            c_lim = Helper.get_double("Please enter the credit limit: $");
+            interest = Double.valueOf(df.format(interest));
+            c_lim = Double.valueOf(df.format(c_lim));
+            confirm = Helper.confirm("Creating card with details:\nInterest Rate: "+interest+"%\nCredit Limit: $"+c_lim+conf_warn);
+        }while(!confirm);
+
+        Credit new_card = new Credit(null, cvc, card_num, interest, null, 0, c_lim);
+        ops.create_credit_card(new_card);
+        return false;
     }
 
 

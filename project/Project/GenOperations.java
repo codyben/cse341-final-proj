@@ -9,6 +9,7 @@ public class GenOperations extends DatabaseOperations {
     public HashMap<Integer, String> locations_prompt;
     public HashMap<Integer, String> atms_prompt;
     public HashMap<Integer, String> branches_prompt;
+    private Random rand;
     GenOperations(final Connection c) throws SQLException {
         super(c);
         locations = new HashMap<>();
@@ -18,6 +19,27 @@ public class GenOperations extends DatabaseOperations {
         atms_prompt = new HashMap<>();
         branches_prompt = new HashMap<>();
         this.list_locations();
+        rand = new Random();
+    }
+
+    public final String compute_random_num_str(final int length) {
+        String ret = "";
+        for(int i = 0; i < length; i++) {
+            ret += Integer.toString(this.rand.nextInt(10));
+        }
+
+        return ret;
+    }
+
+    public final String compute_card_num() {
+        return compute_random_num_str(15);
+    }
+
+    public final String compute_cvc() {
+        return compute_random_num_str(3);
+    }
+    public final String compute_pin() {
+        return compute_random_num_str(4);
     }
 
     public void list_locations() throws SQLException{

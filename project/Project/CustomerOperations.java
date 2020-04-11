@@ -20,9 +20,6 @@ class CustomerOperations extends DatabaseOperations {
         super(c);
     }
 
-    public void test() {
-        // System.out.println("hi");
-    }
     public HashMap<String, User> get_user_by_id() {
         return null;
         //TODO
@@ -293,7 +290,7 @@ class CustomerOperations extends DatabaseOperations {
         ArrayList<Debit> accumulator = new ArrayList<>();
         try {
             ResultSet result;
-            get_debit = con.prepareStatement("SELECT to_char(pin) as p, to_char(card_id) as c_id, to_char(cvc) as c, card_number, acct_id FROM DEBIT_CARD NATURAL JOIN CARD NATURAL JOIN CUSTOMER_CARDS WHERE customer_id = ?");
+            get_debit = con.prepareStatement("SELECT customer_id, to_char(pin) as p, to_char(card_id) as c_id, to_char(cvc) as c, card_number, acct_id FROM DEBIT_CARD NATURAL JOIN CARD NATURAL JOIN CUSTOMER_CARDS WHERE customer_id = ?");
             get_debit.setInt(1, c.customer_id);
             result = get_debit.executeQuery();
             while(result.next()) {
@@ -302,8 +299,9 @@ class CustomerOperations extends DatabaseOperations {
                 String cvc = result.getString("c");
                 String card_num = result.getString("card_number");
                 int acct_id = result.getInt("acct_id");
+                int cust_id = result.getInt("customer_id");
                 
-                Debit temp = new Debit(card_id, cvc, card_num, pin, acct_id);
+                Debit temp = new Debit(card_id, cvc, card_num, pin, acct_id, cust_id);
                 accumulator.add(temp);
             }
             return accumulator;
@@ -319,7 +317,7 @@ class CustomerOperations extends DatabaseOperations {
         ArrayList<Credit> accumulator = new ArrayList<>();
         try {
             ResultSet result;
-            get_credit = con.prepareStatement("SELECT credit_limit, interest, to_char(card_id) as card_id, to_char(cvc) as cvc, card_number, balance_due, running_balance FROM CREDIT_CARD NATURAL JOIN CARD NATURAL JOIN CUSTOMER_CARDS WHERE customer_id = ?");
+            get_credit = con.prepareStatement("SELECT customer_id, credit_limit, interest, to_char(card_id) as card_id, to_char(cvc) as cvc, card_number, balance_due, running_balance FROM CREDIT_CARD NATURAL JOIN CARD NATURAL JOIN CUSTOMER_CARDS WHERE customer_id = ?");
             get_credit.setInt(1, c.customer_id);
             result = get_credit.executeQuery();
             while(result.next()) {
@@ -330,8 +328,9 @@ class CustomerOperations extends DatabaseOperations {
                 double running_balance = result.getDouble("running_balance");
                 double interest = result.getDouble("interest");
                 double credit_limit = result.getDouble("credit_limit");
+                int cust_id = result.getInt("customer_id");
                 
-                Credit temp = new Credit(card_id, cvc, card_num, interest, balance, running_balance, credit_limit);
+                Credit temp = new Credit(card_id, cvc, card_num, interest, balance, running_balance, credit_limit, cust_id);
                 accumulator.add(temp);
             }
             return accumulator;
@@ -340,5 +339,34 @@ class CustomerOperations extends DatabaseOperations {
             Helper.notify("warn", "\nUnable to return credit card data.\n", true);
             return null;
         }
+    }
+
+    public Credit create_credit_card(final Credit c) {
+        /* SQL Steps:
+         * Insert a new row into CARD
+         * Insert a new row into Credit_Card
+         * Link them in customer_cards
+         * Good2GO
+         */
+
+        
+        return null;
+    }
+
+    public Debit create_debit_card(final Debit d) {
+        /* SQL Steps:
+         * Insert a new row into CARD
+         * Insert a new row into Debit_Card
+         * Link in customer cards
+         */ 
+        return null;
+    }
+
+    public Debit replace_debit_card(final User c, final Debit d) {
+        return null;
+    }
+
+    public Credit replace_credit_card(final User c) {
+        return null;
     }
 }

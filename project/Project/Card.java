@@ -6,15 +6,17 @@ public class Card {
     public String cvc;
     public String card_number;
     private Connection con;
+    public int customer_id;
     private CustomerOperations ops;
     private ArrayList<CardActivity> recs;
 
-    Card(String card_id, String cvc, String card_number) {
+    Card(String card_id, String cvc, String card_number, int cust_id) {
         con = Helper.con();
         ops = new CustomerOperations(con);
         this.card_id = card_id;
         this.cvc = cvc;
         this.card_number = card_number;
+        this.customer_id = cust_id;
     }
 
     @Override

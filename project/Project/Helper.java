@@ -96,7 +96,7 @@ class Helper {
 
     }
 
-    public static boolean confirm(String msg) {
+    public static boolean confirm(final String msg) {
         Helper.notify("warn", "\n"+msg+"\n", true);
         HashMap<Integer, String> use_cases = new HashMap<>();
         use_cases.put(1, "Yes.");
@@ -130,7 +130,7 @@ class Helper {
      * @param msg
      * @return String
      */
-    public static String get_choice(HashMap<Integer, String> results, String msg) {
+    public static final String get_choice(final HashMap<Integer, String> results, String msg) {
         if(msg == null) {
             msg = "Choose an option below.";
         } 
