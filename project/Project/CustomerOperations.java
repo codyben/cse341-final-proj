@@ -12,6 +12,9 @@ class CustomerOperations extends DatabaseOperations {
     private PreparedStatement do_deposit;
     private PreparedStatement get_debit;
     private PreparedStatement get_credit;
+    private PreparedStatement do_credit_purchase;
+    private PreparedStatement do_debit_purchase;
+    private PreparedStatement do_card_activity;
 
     CustomerOperations(final Connection c) {
         super(c);
@@ -164,6 +167,58 @@ class CustomerOperations extends DatabaseOperations {
         }
     }
 
+    /**
+     * Performs a purchase using a user's credit card. Returns -1 on exception, 0 on insufficient funds, otherwise on success.  
+     * @param amount
+     * @param loc_id
+     * @param acct_id
+     * @return
+     */
+    public int do_credit_purchase(final double amount, final String name, final int card_id) {
+        try {
+            ResultSet result;
+            do_credit_purchase = con.prepareStatement("SELECT make_purchase_credit(?, ?, ?) as r from dual");
+            do_credit_purchase.setDouble(1, amount);
+            do_credit_purchase.setString(2, name);
+            do_credit_purchase.setInt(3, card_id);
+            result = do_credit_purchase.executeQuery();
+            result.next();
+            if(result.getInt("r") < 0 ) return 0; else return 1; 
+        } catch(Exception e) {
+            Helper.notify("warn", "\nUnable to perform a credit card purchase.\n", true);
+            return -1;
+        }
+    }
+
+    /**
+     * Performs a purchase using a user's debit card. Returns -1 on exception, 0 on insufficient funds, otherwise on success. 
+     * @param amount
+     * @param loc_id
+     * @param acct_id
+     * @return
+     */
+    public int do_debit_purchase(final double amount, final String name, final int card_id) {
+        try {
+            ResultSet result;
+            do_debit_purchase = con.prepareStatement("SELECT make_purchase_debit(?, ?, ?) as r from dual");
+            do_debit_purchase.setDouble(1, amount);
+            do_debit_purchase.setString(2, name);
+            do_debit_purchase.setInt(3, card_id);
+            result = do_debit_purchase.executeQuery();
+            result.next();
+            if(result.getInt("r") < 0 ) return 0; else return 1; 
+        } catch(Exception e) {
+            Helper.notify("warn", "\nUnable to perform a debit card purchase.\n", true);
+            return -1;
+        }
+    }
+    /**
+     * Performs a withdrawal on a user account. Returns false on failure.
+     * @param amount
+     * @param loc_id
+     * @param acct_id
+     * @return
+     */
     public boolean do_withdrawal(double amount, final int loc_id, final int acct_id) {
         amount *= -1;
         try {
@@ -180,8 +235,43 @@ class CustomerOperations extends DatabaseOperations {
             return false;
         }
     }
+    /**
+     * Get the activity (purchases) that happens on a card. Returns null for error, blank ArrayList for no results, full ArrayList otherwise.
+     * @param card_id
+     * @return
+     */
+    final public ArrayList<CardActivity> do_activity(final int card_id) {
+        ArrayList<CardActivity> records = new ArrayList<>();
+        try {
+            ResultSet result;
+            do_card_activity = con.prepareStatement("SELECT SUBSTR(card_number, 1, 5) || '*********' as card_num, purchase_name, purchase_time, purchase_amount FROM CARD NATURAL JOIN BUYS NATURAL JOIN purchases WHERE card_id = ? ORDER BY purchase_time DESC");
+            do_card_activity.setInt(1, card_id);
+            result = do_card_activity.executeQuery();
+            while(result.next()) {
+                String card_num = result.getString("card_num");
+                String purchase_name = result.getString("purchase_name");
+                java.util.Date purchase_time = result.getDate("purchase_time");
+                double p_amt = result.getDouble("purchase_amount");
+                CardActivity temp = new CardActivity(card_num, purchase_name, purchase_time, p_amt);
+                records.add(temp);
+            }
+            
+        } catch(Exception e) {
+            Helper.notify("warn", "\nUnable to get account activity.\n", true);
+            return null;
+        }
 
-    public boolean do_deposit(final double amount, final int loc_id, final int acct_id) {
+        return records;
+    }
+
+    /**
+     * Performs a deposit on a user account. Returns false on failure.
+     * @param amount
+     * @param loc_id
+     * @param acct_id
+     * @return
+     */
+    final public boolean do_deposit(final double amount, final int loc_id, final int acct_id) {
         
         try {
             ResultSet result;
@@ -229,7 +319,7 @@ class CustomerOperations extends DatabaseOperations {
         ArrayList<Credit> accumulator = new ArrayList<>();
         try {
             ResultSet result;
-            get_credit = con.prepareStatement("SELECT interest, to_char(card_id) as card_id, to_char(cvc) as cvc, card_number, balance_due, running_balance FROM CREDIT_CARD NATURAL JOIN CARD NATURAL JOIN CUSTOMER_CARDS WHERE customer_id = ?");
+            get_credit = con.prepareStatement("SELECT credit_limit, interest, to_char(card_id) as card_id, to_char(cvc) as cvc, card_number, balance_due, running_balance FROM CREDIT_CARD NATURAL JOIN CARD NATURAL JOIN CUSTOMER_CARDS WHERE customer_id = ?");
             get_credit.setInt(1, c.customer_id);
             result = get_credit.executeQuery();
             while(result.next()) {
@@ -239,8 +329,9 @@ class CustomerOperations extends DatabaseOperations {
                 double balance = result.getDouble("balance_due");
                 double running_balance = result.getDouble("running_balance");
                 double interest = result.getDouble("interest");
+                double credit_limit = result.getDouble("credit_limit");
                 
-                Credit temp = new Credit(card_id, cvc, card_num, interest, balance, running_balance);
+                Credit temp = new Credit(card_id, cvc, card_num, interest, balance, running_balance, credit_limit);
                 accumulator.add(temp);
             }
             return accumulator;

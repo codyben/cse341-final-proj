@@ -18,6 +18,7 @@ class User {
     public ArrayList<Account> user_accounts;
     public ArrayList<Debit> user_debit;
     public ArrayList<Credit> user_credit;
+    public HashMap<String, Card> user_cards;
 
     User(int c, String f, String l, Date d) {
         customer_id = c;
@@ -25,6 +26,7 @@ class User {
         last_name = l;
         dob = d;
         full_name = first_name +" "+last_name;
+        
     }
 
     @Override
@@ -41,6 +43,8 @@ class User {
             user_credit = sync.user_credit_cards(this);
         } else if(num_debit > 0) {
             user_debit = sync.user_debit_cards(this);
+        } else if (total_cards > 0 ) {
+            user_cards = new HashMap<>();
         }
         // num_loans = sync.num_loans_for_user(this);
         user_accounts = sync.account_details_for_user(this);
@@ -132,6 +136,31 @@ class User {
                 System.out.println("+Minimum balance:\t "+Double.toString(a.min_balance)+"$");
             }
         }
+    }
+
+    public HashMap<Integer, String> card_promptmap() {
+        HashMap<Integer, String> promptmap = new HashMap<>();
+        HashMap<String, Card> sync = new HashMap<>();
+        
+        int i = 1;
+        
+        if(this.num_credit > 0) {
+            for(Credit c : user_credit) {
+                String key = c.toString();
+                promptmap.put(i++, key);
+                sync.put(key, c);
+            }
+        }
+
+        if(this.num_debit > 0) {
+            for(Debit d : user_debit) {
+                String key = d.toString();
+                promptmap.put(i++, key);
+                sync.put(key, d);
+            }
+        }
+        user_cards = sync;
+        return promptmap;
     }
 
     public void credit_metadata() {

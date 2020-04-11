@@ -56,13 +56,13 @@ class Helper {
         // System.exit(1);
     }
 
-    public static String get_string(String msg) {
+    public static String get_string(final String msg) {
         Scanner scnr = new Scanner(System.in); 
-        System.out.println(msg);
+        System.out.print(msg);
         return scnr.nextLine();
     }
 
-    public static Integer get_int(String msg) {
+    public static Integer get_int(final String msg) {
         Scanner scnr = new Scanner(System.in); 
         System.out.println(msg);
         if(scnr.hasNextInt()) 
@@ -75,7 +75,7 @@ class Helper {
 
     public static Double get_double(final String msg) {
         Scanner scnr = new Scanner(System.in); 
-        System.out.println(msg);
+        System.out.print(msg);
         if(scnr.hasNextDouble()) 
             return scnr.nextDouble();
         else {

@@ -101,26 +101,32 @@ class Client extends ProjectInterface {
 		do {
 			c.compute();
 			c.format_data();
+			// String interface1 = "Refresh account details.";
 			String interface2a = "Account Deposit.";
 			String interface2b = "Account Withdrawal.";
 			String interface3Alpha = "Loan Payment.";
 			String interface3Beta = "Credit Card Payment.";
-			// String interface4 = "Open a new account.";
+			String interface4 = "Open a new account.";
 			// String interface5 = "Obtain a new / replacement credit card";
 			// String interface6 = "Take out a new loan";
-			String interface7Alpha = "Make a purchase with your cards";
-			String interface7Beta = "View activity on your cards";
+			String interface7Alpha = "Make a purchase with your cards.";
+			String interface7Beta = "View activity on your cards.";
+			String interface5a = "Obtain a replacement card.";
+			String interface5b = "Request a card.";
 			String interface8 = "View account summary.";
 			String interface8b = "View card summary.";
 			String quit = "Return to previous.";
 			HashMap<Integer, String> paths = new HashMap<>();
 			int i = 1;
 			HashMap<Integer, String> accounts = new HashMap<>();
+			paths.put(i++, interface5b); //always allow a user to request a card.
+			paths.put(i++, interface4); //always allow a user to open a new account.
 			if(c.num_accounts > 0 ) {
 				accounts = c.get_accounts();
 				paths.put(i++, interface2a);
 				paths.put(i++, interface2b);
 				paths.put(i++, interface8);
+				
 			} else if(c.num_credit > 0) {
 				paths.put(i++, interface3Beta);
 			} else if(c.num_loans > 0 ) {
@@ -129,6 +135,7 @@ class Client extends ProjectInterface {
 				paths.put(i++, interface7Beta);
 				paths.put(i++, interface7Alpha);
 				paths.put(i++, interface8b);
+				paths.put(i++, interface5a);
 			} else {
 				Helper.notify("warn", "\nYour account does not appear to have any accounts/loans/cards associated with it. Please choose an option from below.\n", true);
 
@@ -172,17 +179,19 @@ class Client extends ProjectInterface {
 						Account new_acc = c.accounts.get(acct_key);
 						double new_bal = new_acc.balance;
 						double delta = new_bal - old_bal;
-						DecimalFormat df = new DecimalFormat("#.##");
+						DecimalFormat df = new DecimalFormat("#.0#");
 						// handle rounding:
 						// https://stackoverflow.com/questions/2808535/round-a-double-to-2-decimal-places
 						delta = Double.valueOf(df.format(delta));
 						this.display_account_metadata(new_acc);
+						String succ_str = Helper.notify_str("green", "\nDeposit Successful!\n", true);
 						if(delta <= 0) {
 							System.out.println("Balance change: "+Helper.notify_str("yellow",delta,false)+"$");
+							succ_str = Helper.notify_str("green", "\nWithdrawal Successful!\n", true);
 						} else {
 							System.out.println("Balance change: +"+Helper.notify_str("green",delta,false)+"$");
 						}
-						System.out.println("\n-------------------------------------------------------\n");
+						System.out.println("\n-------------------------------------------------------\n"+succ_str);
 					}
 
 				} else if(choice.equals(interface3Alpha)) {
@@ -190,9 +199,21 @@ class Client extends ProjectInterface {
 				} else if(choice.equals(interface3Beta)) {
 	
 				} else if(choice.equals(interface7Alpha)) {
-	
+					String card_choice = Helper.get_choice(c.card_promptmap(), Helper.notify_str("heading", "Please choose a card from your accout below.", true));
+					Card temp_pay = c.user_cards.get(card_choice);
+					boolean purchase_result = temp_pay.prompt_and_confirm_purchase(); //true for a success, false for an error/wishing to exit. Messages handled for success/error.
+					if(purchase_result) {
+						c.compute();
+						System.out.println("\n-------------------------------------------------------\n");
+						c.account_metadata();
+					}
 				} else if(choice.equals(interface7Beta)) {
-	
+
+					String card_choice = Helper.get_choice(c.card_promptmap(), Helper.notify_str("heading", "Please choose a card from your accout below.", true));
+					Card temp_view = c.user_cards.get(card_choice);
+					temp_view.activity();
+
+
 				} else if(choice.equals(quit)) {
 					cont = false;
 				} else if(choice.equals(interface8)) {
@@ -202,6 +223,12 @@ class Client extends ProjectInterface {
 				} else if(choice.equals(interface8b)) {
 					c.compute();
 					c.card_metadata();
+				} else if(choice.equals(interface5a)) {
+					//obtain a replacement card.
+				} else if(choice.equals(interface5b)) {
+					//request a card.
+				} else if(choice.equals(interface4)) {
+					//open a new account.
 				}
 				break;
 			}while(!isOK);
