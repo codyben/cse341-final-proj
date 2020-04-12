@@ -120,3 +120,10 @@ COMMIT;
 RETURN(new_acct_id);
 end create_savings_account;
 
+create or replace function num_checking_accounts(c_id IN NUMBER)
+RETURN number
+IS num_chck NUMBER(25);
+BEGIN
+SELECT count(*) into num_chck FROM HOLDS NATURAL JOIN checking_account WHERE customer_id = 62;
+RETURN(num_chck);
+end num_checking_accounts;
