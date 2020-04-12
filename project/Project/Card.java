@@ -19,18 +19,28 @@ public class Card {
         this.customer_id = cust_id;
     }
 
+    /* Helper methods to handle the coercion from different data types */
+    final public int get_cvc() {
+        return Integer.parseInt(this.cvc);
+    }
+
+    final public int get_card_id() {
+        return Integer.parseInt(this.card_id);
+    }
+
     @Override
     public String toString() {
-        if( this instanceof Debit) {
+        if(this instanceof Debit) {
             return "Debit Card (ID="+card_id+")";
         } else {
             return "Credit Card (ID="+card_id+")"; 
         }
     }
     public void metadata() {
+        Helper.notify("heading", "+Card Number: "+card_number, true);
         System.out.println("+Card ID: "+card_id);
         System.out.println("+Card CVC: "+cvc);
-        System.out.println("+Card Number: "+card_number);
+        
         System.out.println();
     }
 
@@ -94,9 +104,18 @@ public class Card {
 
         for(CardActivity r : results) {
             r.metdata();
+            System.out.println();
         }
 
         System.out.println("\n-------------------------------------------------------\n");
         
     }
+
+    public Card compute() {
+        if(this instanceof Debit)  {
+            
+        }
+        return null;
+    }
+
 }

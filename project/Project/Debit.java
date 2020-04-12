@@ -13,4 +13,8 @@ public class Debit extends Card {
         System.out.println("+PIN: "+pin);
         System.out.println("+Associated Account ID: "+acct_id);
     }
+
+    public int get_pin() {
+        return Integer.parseInt(this.pin);
+    }
 }

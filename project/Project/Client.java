@@ -79,7 +79,7 @@ class Client extends ProjectInterface {
 		HashMap<Integer, String> paths = new HashMap<>();
 		paths.put(1, "ATM");
 		paths.put(2, "Branch");
-		paths.put(3, "Select new interface.");
+		paths.put(3, "Select new interface (quit option available).");
 		String choice = Helper.get_choice(paths, Helper.notify_str("heading", "\nA location is required. Choose a type from below.\n", false));
 		GenOperations data_container = Helper.compute_general(); //only compute this if the user has made a choice.
 		String choice_key = "Quit";
@@ -110,12 +110,12 @@ class Client extends ProjectInterface {
 			final String interface2b = "Account Withdrawal.";
 			final String interface3Alpha = "Loan Payment.";
 			final String interface3Beta = "Credit Card Payment.";
-			final String interface4 = "Open a new account.";
+			final String interface4 = "Open a new account. (BUG)";
 			// final String interface5 = "Obtain a new / replacement credit card";
 			// final String interface6 = "Take out a new loan";
 			final String interface7Alpha = "Make a purchase with your cards.";
 			final String interface7Beta = "View activity on your cards.";
-			final String interface5a = "Obtain a replacement card.";
+			final String interface5a = "Obtain a replacement card. (TODO)";
 			final String interface5b = "Request a card.";
 			final String interface8 = "View account summary.";
 			final String interface8b = "View card summary.";
@@ -127,24 +127,35 @@ class Client extends ProjectInterface {
 			paths.put(i++, interface4); //always allow a user to open a new account.
 			
 			/* Dynamically create a menu based on the user's current data */
-			if(c.num_accounts > 0 ) {
+			boolean acc_ops = c.num_accounts > 0;
+			boolean cred_ops = c.num_credit > 0;
+			boolean loan_ops = c.num_credit > 0;
+			boolean card_ops = c.total_cards > 0;
+			if(acc_ops) {
 				accounts = c.get_accounts();
 				paths.put(i++, interface2a);
 				paths.put(i++, interface2b);
 				paths.put(i++, interface8);
 				
-			} else if(c.num_credit > 0) {
+			}  
+			
+			if(cred_ops) {
 				paths.put(i++, interface3Beta);
-			} else if(c.num_loans > 0 ) {
+			} 
+			
+			if(loan_ops) {
 				paths.put(i++, interface3Alpha);
-			} else if(c.total_cards > 0 ) {
+			} 
+			
+			if(card_ops) {
 				paths.put(i++, interface7Beta);
 				paths.put(i++, interface7Alpha);
 				paths.put(i++, interface8b);
 				paths.put(i++, interface5a);
-			} else {
+			}  
+			
+			if (!acc_ops && !card_ops && !cred_ops && !loan_ops){
 				Helper.notify("warn", "\nYour account does not appear to have any accounts/loans/cards associated with it. Please choose an option from below.\n", true);
-
 			}
 			// paths.put(i++, interface4);
 			// paths.put(i++, interface5);
@@ -234,7 +245,7 @@ class Client extends ProjectInterface {
 				} else if(choice.equals(interface5b)) {
 					c.request_card(ops);
 				} else if(choice.equals(interface4)) {
-					//open a new account.
+					c.create_new_account();
 				}
 				break;
 			}while(!isOK);

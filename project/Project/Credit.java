@@ -14,8 +14,16 @@ public class Credit extends Card {
 
     public void metadata() {
         super.metadata();
+        String due = Double.toString(balance_due);
+
+        if(balance_due == 0) {
+            due = Helper.notify_str("green", due, false);
+        } else {
+            due = Helper.notify_str("red", due, false);
+        }
         System.out.println("+Interest: "+Double.toString(interest)+"%");
-        System.out.println("+Balance Due: "+Double.toString(balance_due)+"$");
+        System.out.println("+Balance Due: "+due+"$");
         System.out.println("+Running Balance: "+Double.toString(running_balance)+"$");
+        System.out.println("+Credit Limit: "+Double.toString(credit_limit)+"$");
     }
 }

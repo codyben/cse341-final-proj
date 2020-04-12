@@ -6,6 +6,7 @@ class Account {
     public Date creation_date;
     public Date added_date;
     public double min_balance;
+    public int customer_id;
 
     Account(double b, double i, Date c, Date a) {
         balance = b;

@@ -42,11 +42,13 @@ class User {
         total_cards = sync.num_cards_for_user(this);
         if(num_credit > 0 ) {
             user_credit = sync.user_credit_cards(this);
-        } else if(num_debit > 0) {
+        } 
+        if(num_debit > 0) {
+            System.out.println();
             user_debit = sync.user_debit_cards(this);
-        } else if (total_cards > 0 ) {
-            user_cards = new HashMap<>();
-        }
+        }  
+        
+        // if (total_cards > 0 ) {}
         // num_loans = sync.num_loans_for_user(this);
         user_accounts = sync.account_details_for_user(this);
     }
@@ -132,11 +134,13 @@ class User {
             System.out.println("+Creation date: "+cdate);
             System.out.println("+Add date: "+adate);
             System.out.println("+Current interest rate:\t "+ Double.toString(a.interest)+"%");
-            System.out.println("+Current balance:\t "+ Double.toString(a.balance)+"$");
+            System.out.println("+Current balance:\t "+ String.format("%.2f",a.balance)+"$");
             if(a.min_balance != -1) {
-                System.out.println("+Minimum balance:\t "+Double.toString(a.min_balance)+"$");
+                System.out.println("+Minimum balance:\t "+String.format("%.2f",a.min_balance)+"$");
             }
+            System.out.println();
         }
+        System.out.println();
     }
 
     public Account prompt_checking() {
@@ -196,16 +200,20 @@ class User {
         for(final Credit c : user_credit) {
             c.metadata();
         }
+        System.out.println("\n-------------------------------------------------------\n");
     }
 
     public void debit_metadata() {
+        System.out.println("\n-------------------------------------------------------\n");
         Helper.notify("heading", "\nDebit card metadata for "+this.toString()+"\n", true);
+
         for(final Debit d : user_debit) {
             d.metadata();
         }
     }
 
     public void card_metadata() throws UnrecoverableException {
+        this.compute();
         try {
             if(num_debit > 0) this.debit_metadata();
             if(num_credit > 0) this.credit_metadata();
@@ -253,7 +261,7 @@ class User {
         final String pin = gops.compute_pin();
         final String card_num = gops.compute_card_num();
         final String cvc = gops.compute_cvc();
-        Debit new_card = new Debit(null, cvc, card_num,  pin, a.acct_id); //create a new "debit card" that we can serialize into the db.
+        Debit new_card = new Debit(null, cvc, card_num,  pin, a.acct_id, customer_id); //create a new "debit card" that we can serialize into the db.
         ops.create_debit_card(new_card);
         return false;
 
@@ -266,6 +274,7 @@ class User {
         double interest; 
         double c_lim; 
         DecimalFormat df = new DecimalFormat("#.0#");
+        
         boolean confirm = false;
         String conf_warn = Helper.notify_str("warn", "\nDo you wish to proceed?\n", false);
         // handle rounding:
@@ -277,9 +286,82 @@ class User {
             confirm = Helper.confirm("Creating card with details:\nInterest Rate: "+interest+"%\nCredit Limit: $"+c_lim+conf_warn);
         }while(!confirm);
 
-        Credit new_card = new Credit(null, cvc, card_num, interest, null, 0, c_lim);
+        Credit new_card = new Credit(null, cvc, card_num, interest, null, 0, c_lim, customer_id);
         ops.create_credit_card(new_card);
         return false;
+    }
+
+    public boolean create_new_account() {
+        /**
+         * SQL Steps:
+         * Create an account.
+         * Insert into holds.
+         */
+        HashMap<Integer, String> promptmap = new HashMap<>();
+        promptmap.put(1, "Savings Account");
+        promptmap.put(2, "Checking Account");
+        promptmap.put(3, "Return to Previous.");
+        boolean confirm = false;
+        DecimalFormat df = new DecimalFormat("#.0#");
+        double new_interest = 0;
+        double minimum_balance = 0;
+        String acc_choice = "";
+
+        do {
+            acc_choice = Helper.get_choice(promptmap, "Please choose an account type to create.");
+            
+            if(acc_choice.equals("Return to Previous.")) {
+                return false;
+            } 
+            
+            new_interest = Helper.get_double("Enter the interest rate for the account: %");
+
+            if(acc_choice.equals("Savings Account")) {
+                minimum_balance = Helper.get_double("Enter the minimum balance for the account: $");
+                confirm = Helper.confirm("Creating a "+acc_choice+" with interest of "+df.format(new_interest)+"% and minimum balance of "+df.format(minimum_balance)+"$\nIs this ok?");
+            } else {
+                confirm = Helper.confirm("Creating a "+acc_choice+" with interest of "+df.format(new_interest)+"%\nIs this ok?");
+            }
+            
+        }while(!confirm);
+        
+        boolean status = false;
+        
+        if(acc_choice.equals("Savings Account")) {
+            Account new_account = new Account(0, new_interest, null, null);
+            new_account.customer_id = customer_id;
+            status = this.create_savings_account(new_account);
+        } else if(acc_choice.equals("Checking Account")) {
+            Account new_account = new Account(0, new_interest, null, null, minimum_balance, 0);
+            new_account.customer_id = customer_id;
+            status = this.create_checking_account(new_account);
+        } 
+
+        if(!status) {
+            boolean do_again = Helper.confirm("Would you like to retry the account creation dialog?");
+            if(do_again) {
+                return create_new_account();
+            }
+        } else {
+            Helper.notify("green", "+Successfully created new "+acc_choice, true);
+        }
+
+        return status;
+
+    }
+    /**
+     * BIG BUG NEED TO REDO ACCOUNT TYPES.
+     * @param a
+     * @return
+     */
+    private boolean create_checking_account(final Account a) {
+        CustomerOperations ops = new CustomerOperations(Helper.con());
+        return ops.create_checking_account(a);
+    }
+
+    private boolean create_savings_account(final Account a) {
+        CustomerOperations ops = new CustomerOperations(Helper.con());
+        return ops.create_savings_account(a);
     }
 
 

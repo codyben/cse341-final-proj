@@ -15,6 +15,13 @@ class CustomerOperations extends DatabaseOperations {
     private PreparedStatement do_credit_purchase;
     private PreparedStatement do_debit_purchase;
     private PreparedStatement do_card_activity;
+    private PreparedStatement create_credit_card;
+    private PreparedStatement create_debit_card;
+    private PreparedStatement request_new_card;
+    private PreparedStatement deserialize_credit;
+    private PreparedStatement deserialize_debit;
+    private PreparedStatement create_checking_account;
+    private PreparedStatement create_savings_account;
 
     CustomerOperations(final Connection c) {
         super(c);
@@ -341,7 +348,7 @@ class CustomerOperations extends DatabaseOperations {
         }
     }
 
-    public Credit create_credit_card(final Credit c) {
+    public Credit create_credit_card(final Credit card) {
         /* SQL Steps:
          * Insert a new row into CARD
          * Insert a new row into Credit_Card
@@ -349,17 +356,67 @@ class CustomerOperations extends DatabaseOperations {
          * Good2GO
          */
 
+        try {
+            //https://sqljana.wordpress.com/2017/01/22/oracle-return-select-statement-results-like-sql-server-sps-using-pipelined-functions/
+            //TODO
+            ResultSet result;
+            create_credit_card = con.prepareStatement("SELECT create_credit_card(?,?,?,?,?,?) as c from dual");
+            create_credit_card.setString(1, card.card_number);
+            create_credit_card.setInt(2, card.get_cvc());
+            create_credit_card.setDouble(3, card.interest);
+            create_credit_card.setDouble(4, card.running_balance);
+            create_credit_card.setDouble(5, card.credit_limit);
+            create_credit_card.setInt(6, card.customer_id);
+            result = create_credit_card.executeQuery();
+            result.next();
+            int card_id = result.getInt("c");
+            return deserialize_credit(card_id);
+        } catch(SQLDataException precision) {
+            Helper.notify("warn", "\nAn error occurred while using your provided inputs. Please try something else.\n", true);
+            return null;
+        } catch(SQLIntegrityConstraintViolationException integrity) {
+            Helper.notify("warn", "\nA duplicate card number was encountered. Unlikely, but it did.\n", true);
+            return null;
+        } catch(Exception e) {
+            e.printStackTrace();
+            Helper.notify("warn", "\nUnable to create a new Credit Card. Please try again.\n", true);
+            return null;
+        }
         
-        return null;
+        // return null;
     }
 
-    public Debit create_debit_card(final Debit d) {
+    public Debit create_debit_card(final Debit card) {
         /* SQL Steps:
          * Insert a new row into CARD
          * Insert a new row into Debit_Card
          * Link in customer cards
          */ 
-        return null;
+        try {
+            //https://sqljana.wordpress.com/2017/01/22/oracle-return-select-statement-results-like-sql-server-sps-using-pipelined-functions/
+            //TODO
+            ResultSet result;
+            create_debit_card = con.prepareStatement("SELECT create_debit_card(?,?,?,?,?) as d from dual");
+            create_debit_card.setString(1, card.card_number);
+            create_debit_card.setInt(2, card.get_cvc());
+            create_debit_card.setInt(3, card.get_pin());
+            create_debit_card.setDouble(4, card.acct_id);
+            create_debit_card.setInt(5, card.customer_id);
+            result = create_debit_card.executeQuery();
+            result.next();
+            //Ideally, I would eventually like to pass the result object to a static helper method which could handle the deserialization.
+            int card_id = result.getInt("d");
+            return deserialize_debit(card_id);
+        } catch(SQLIntegrityConstraintViolationException integrity) {
+            Helper.notify("warn", "\nA duplicate card number was encountered. Unlikely, but it did.\n", true);
+            return null;
+        } catch(Exception e) {
+            e.printStackTrace();
+            Helper.notify("warn", "\nUnable to create a new Debit Card. Please try again.\n", true);
+            return null;
+        }
+        
+        // return null;
     }
 
     public Debit replace_debit_card(final User c, final Debit d) {
@@ -368,5 +425,91 @@ class CustomerOperations extends DatabaseOperations {
 
     public Credit replace_credit_card(final User c) {
         return null;
+    }
+
+    public Debit deserialize_debit(final int card_id) {
+        try {
+            ResultSet result;
+            deserialize_debit = con.prepareStatement("SELECT customer_id, to_char(pin) as p, to_char(cvc) as c, card_number, acct_id FROM DEBIT_CARD NATURAL JOIN CARD NATURAL JOIN CUSTOMER_CARDS WHERE card_id = ?");
+            deserialize_debit.setInt(1, card_id);
+            result = deserialize_debit.executeQuery();
+            if(result.next()) {
+                String pin = result.getString("p");
+                String cvc = result.getString("c");
+                String card_num = result.getString("card_number");
+                int acct_id = result.getInt("acct_id");
+                int cust_id = result.getInt("customer_id");
+                
+                return new Debit(Integer.toString(card_id), cvc, card_num, pin, acct_id, cust_id);
+            }
+        }catch(Exception e) {
+            return null;
+        }
+        return null;
+    }
+
+    public Credit deserialize_credit(final int card_id) {
+        try {
+            ResultSet result;
+            deserialize_credit = con.prepareStatement("SELECT customer_id, credit_limit, interest, to_char(cvc) as cvc, card_number, balance_due, running_balance FROM CREDIT_CARD NATURAL JOIN CARD NATURAL JOIN CUSTOMER_CARDS WHERE card_id = ?");
+            deserialize_credit.setInt(1, card_id);
+            result = deserialize_credit.executeQuery();
+
+            if(result.next()) {
+
+            }
+        } catch(Exception e) {
+
+        }
+        return null;
+    }
+
+    public boolean create_checking_account(final Account a) {
+        ResultSet result;
+        try {
+            create_checking_account = con.prepareStatement("SELECT create_checking_account(?,?,?,?) as c from dual");
+            create_checking_account.setDouble(1, a.balance);
+            create_checking_account.setDouble(2, a.interest);
+            create_checking_account.setDouble(3, a.min_balance);
+            create_checking_account.setInt(4, a.customer_id);
+            result = create_checking_account.executeQuery();
+            // result.next();
+            //Ideally, I would eventually like to pass the result object to a static helper method which could handle the deserialization.
+            return true;
+        } catch(SQLDataException precision) {
+            Helper.notify("warn", "\nAn error occurred while using your provided inputs. Please try something else.\n", true);
+            return false;
+        } catch(SQLIntegrityConstraintViolationException integrity) {
+            Helper.notify("warn", "\nA duplicate card number was encountered. Unlikely, but it did.\n", true);
+            return false;
+        } catch(Exception e) {
+            e.printStackTrace();
+            Helper.notify("warn", "\nUnable to create a new Credit Card. Please try again.\n", true);
+            return false;
+        }
+    }
+
+    public boolean create_savings_account(final Account a) {
+        ResultSet result;
+        try {
+            create_checking_account = con.prepareStatement("SELECT create_savings_account(?,?,?) as s from dual");
+            create_checking_account.setDouble(1, a.balance);
+            create_checking_account.setDouble(2, a.interest);
+            create_checking_account.setInt(3, a.customer_id);
+            result = create_checking_account.executeQuery();
+            // result.next();
+            //Ideally, I would eventually like to pass the result object to a static helper method which could handle the deserialization.
+            return true;
+        } catch(SQLDataException precision) {
+            Helper.notify("warn", "\nAn error occurred while using your provided inputs. Please try something else.\n", true);
+            return false;
+        } catch(SQLIntegrityConstraintViolationException integrity) {
+            Helper.notify("warn", "\nA duplicate card number was encountered. Unlikely, but it did.\n", true);
+            return false;
+        } catch(Exception e) {
+            e.printStackTrace();
+            Helper.notify("warn", "\nUnable to create a new Credit Card. Please try again.\n", true);
+            return false;
+        }
     }
 }
