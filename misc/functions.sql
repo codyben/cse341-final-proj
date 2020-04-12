@@ -91,3 +91,19 @@ INSERT INTO customer_cards(card_id, customer_id) VALUES(c_id, cust_od);
 COMMIT;
 RETURN(c_id);
 end create_debit_card;
+
+create or replace function create_checking_account(bal in NUMBER, intr in NUMBER, mb in NUMBER, c_id IN NUMBER)
+RETURN number 
+IS new_acct_id NUMBER(25,0);
+c_date DATE;
+PRAGMA AUTONOMOUS_TRANSACTION;
+BEGIN
+SELECT SYSTIMESTAMP into c_date FROM dual;
+INSERT INTO account(balance, interest, creation_date) VALUES(bal, intr, c_date) RETURNING acct_id INTO new_acct_id;
+COMMIT;
+INSERT INTO holds(customer_id, acct_id, add_date) VALUES(c_id, new_acct_id, c_date);
+INSERT INTO checking_account(acct_id, min_balance) VALUES(new_acct_id, mb);
+COMMIT;
+RETURN(new_acct_id);
+end create_checking_account;
+
