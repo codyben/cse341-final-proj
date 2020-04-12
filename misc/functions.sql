@@ -107,3 +107,16 @@ COMMIT;
 RETURN(new_acct_id);
 end create_checking_account;
 
+create or replace function create_savings_account(bal in NUMBER, intr in NUMBER, c_id IN NUMBER)
+RETURN number IS new_acct_id NUMBER(25,0);
+c_date DATE;
+PRAGMA AUTONOMOUS_TRANSACTION;
+BEGIN
+SELECT SYSTIMESTAMP into c_date FROM dual;
+INSERT INTO account(balance, interest, creation_date) VALUES(bal, intr, c_date) RETURNING acct_id INTO new_acct_id;
+COMMIT;
+INSERT INTO holds(customer_id, acct_id, add_date) VALUES(c_id, new_acct_id, c_date);
+COMMIT;
+RETURN(new_acct_id);
+end create_savings_account;
+
