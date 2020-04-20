@@ -217,4 +217,31 @@ create table loan_payment_location
     location_id NUMBER not null REFERENCES branch(branch_id),
     CONSTRAINT loan_payment_location_pk PRIMARY KEY(payment_id)
 );
-    
+
+create table card_payments
+(
+    action_id REFERENCES CARD_ACTIONS(action_id),
+    card_id REFERENCES CREDIT_CARD(card_id),
+    constraint card_payments_pk PRIMARY KEY (action_id)
+);
+
+create table account_actions_location
+(
+    action_id REFERENCES ACCOUNT_ACTIONS(action_id),
+    location_if REFERENCES location(location_id),
+    constraint account_actions_location_pk PRIMARY KEY (action_id)
+);
+
+CREATE TABLE customer_loans
+(
+    loan_id NUMBER(10) not null REFERENCES loan(loan_id),
+    customer_id NUMBER(10) not null REFERENCES customer(customer_id),
+    constraint customer_loans_pk PRIMARY KEY (loan_id, customer_id)
+);
+
+CREATE TABLE loan_collateral
+(
+    loan_id NUMBER(10) not null REFERENCES secured_loan(loan_id),
+    collateral_id NUMBER(10) not null REFERENCES collateral(collateral_id),
+    constraint loan_collateral_pk PRIMARY KEY (loan_id, collateral_id)
+);
