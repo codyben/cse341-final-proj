@@ -3,6 +3,7 @@ import java.util.*;
 public class GenOperations extends DatabaseOperations {
     private PreparedStatement all_atms;
     private PreparedStatement all_branches;
+    private PreparedStatement user_count;
     public HashMap<String, Location> locations;
     public HashMap<String, ATM> atms;
     public HashMap<String, Branch> branches;
@@ -10,6 +11,11 @@ public class GenOperations extends DatabaseOperations {
     public HashMap<Integer, String> atms_prompt;
     public HashMap<Integer, String> branches_prompt;
     private Random rand;
+
+    final private int PIN_LENGTH = 3;
+    final private int CARD_NUM_LENGTH = 15;
+    final private int CARD_CVC_LENGTH = 3;
+
     GenOperations(final Connection c) throws SQLException {
         super(c);
         locations = new HashMap<>();
@@ -32,17 +38,17 @@ public class GenOperations extends DatabaseOperations {
     }
 
     public final String compute_card_num() {
-        return compute_random_num_str(15);
+        return compute_random_num_str(CARD_NUM_LENGTH);
     }
 
     public final String compute_cvc() {
-        return compute_random_num_str(3);
+        return compute_random_num_str(CARD_CVC_LENGTH);
     }
     public final String compute_pin() {
-        return compute_random_num_str(4);
+        return compute_random_num_str(PIN_LENGTH);
     }
 
-    public void list_locations() throws SQLException{
+    public void list_locations() throws SQLException {
         /* get all the locations, partition them, and coerce into a promptmap */
         int total = 1;
         int local = 1;
@@ -50,7 +56,7 @@ public class GenOperations extends DatabaseOperations {
         ResultSet branch_loc;
         ResultSet atm_loc;
         /* execute all queries and store result */
-        all_branches = con.prepareStatement("SELECT * from location NATURAL JOIN branch");
+        all_branches = con.prepareStatement("SELECT * from location JOIN BRANCH on(location.location_id = branch.branch_id)");
         branch_loc = all_branches.executeQuery();
 
         all_atms = con.prepareStatement("SELECT * from LOCATION natural join ATM_locations NATURAL JOIN atm");
@@ -97,5 +103,20 @@ public class GenOperations extends DatabaseOperations {
             branches_prompt.put(local++, key);
             branches.put(key, temp);
         }
+    }
+
+    public int get_user_count() {
+        ResultSet result;
+        try {
+            user_count = con.prepareStatement("SELECT COUNT(*) as c FROM customer");
+            result = user_count.executeQuery();
+            result.next();
+            return result.getInt("c");
+
+        }catch(Exception e) {
+            Helper.notify("error", "An error occurred while selecting enumerating users. Due to the severity, the program will now exit.", true);
+            Helper.error_exit();
+        }
+        return -1;
     }
 }

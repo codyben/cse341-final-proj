@@ -5,6 +5,7 @@ class CustomerOperations extends DatabaseOperations {
     private PreparedStatement all_users;
     private PreparedStatement account_details;
     private PreparedStatement num_accounts;
+    private PreparedStatement num_checking_acct;
     private PreparedStatement num_credit;
     private PreparedStatement num_debit;
     private PreparedStatement num_cards;
@@ -22,6 +23,8 @@ class CustomerOperations extends DatabaseOperations {
     private PreparedStatement deserialize_debit;
     private PreparedStatement create_checking_account;
     private PreparedStatement create_savings_account;
+    private PreparedStatement create_new_user;
+    private PreparedStatement update_user;
 
     CustomerOperations(final Connection c) {
         super(c);
@@ -41,7 +44,7 @@ class CustomerOperations extends DatabaseOperations {
         try {
             HashMap<String, User> m = new HashMap<>();
             ResultSet result;
-            all_users = con.prepareStatement("SELECT * FROM customer");
+            all_users = con.prepareStatement("SELECT * FROM customer ORDER BY customer_id");
             result = all_users.executeQuery();
 
             while(result.next()) {
@@ -51,7 +54,7 @@ class CustomerOperations extends DatabaseOperations {
                 java.util.Date dob = result.getDate("dob");
                 int c_id = result.getInt("customer_id");
                 String email = result.getString("email");
-                User temp = new User(c_id, fname, lname, dob);
+                User temp = new User(c_id, fname, lname, dob, email);
                 m.put(temp.full_name+" (ID="+temp.customer_id+")", temp);
             }
             return m;
@@ -103,6 +106,25 @@ class CustomerOperations extends DatabaseOperations {
         } catch(Exception e) {
             System.out.println(e.getMessage());
             Helper.notify("warn", "\nUnable to retrieve count of user accounts. This feature will be unavailable.\n", true);
+            return -1;
+        }
+
+    }
+
+    public int num_checking_accounts(final User customer) {
+        /* get the number of checking accounts held by a user */
+        try {
+            ResultSet result;
+            int customer_id = customer.customer_id;
+            // System.out.println(customer_id);
+            num_checking_acct = con.prepareStatement("SELECT num_checking_accounts(?) as c from dual");
+            num_checking_acct.setInt(1, customer_id);
+            result = num_checking_acct.executeQuery();
+            result.next();
+            return result.getInt("c");
+        } catch(Exception e) {
+            // System.out.println(e.getMessage());
+            Helper.notify("warn", "\nUnable to retrieve count of user checking accounts. This feature will be unavailable.\n", true);
             return -1;
         }
 
@@ -297,7 +319,7 @@ class CustomerOperations extends DatabaseOperations {
         ArrayList<Debit> accumulator = new ArrayList<>();
         try {
             ResultSet result;
-            get_debit = con.prepareStatement("SELECT customer_id, to_char(pin) as p, to_char(card_id) as c_id, to_char(cvc) as c, card_number, acct_id FROM DEBIT_CARD NATURAL JOIN CARD NATURAL JOIN CUSTOMER_CARDS WHERE customer_id = ?");
+            get_debit = con.prepareStatement("SELECT customer_id, to_char(pin) as p, to_char(card_id) as c_id, to_char(cvc) as c, card_number, acct_id FROM DEBIT_CARD NATURAL JOIN CARD NATURAL JOIN CUSTOMER_CARDS NATURAL JOIN CARD_ACCOUNT WHERE customer_id = ?");
             get_debit.setInt(1, c.customer_id);
             result = get_debit.executeQuery();
             while(result.next()) {
@@ -511,5 +533,46 @@ class CustomerOperations extends DatabaseOperations {
             Helper.notify("warn", "\nUnable to create a new Credit Card. Please try again.\n", true);
             return false;
         }
+    }
+
+    public User create_new_user(User c) {
+        ResultSet result;
+        try {
+            create_new_user = con.prepareStatement("SELECT create_new_customer(?,?,?,?) as n from dual");
+            create_new_user.setString(1, c.first_name);
+            create_new_user.setString(2, c.last_name);
+            create_new_user.setDate(3, new java.sql.Date(c.dob.getTime()));
+            create_new_user.setString(4, c.email);
+            result = create_new_user.executeQuery();
+            result.next();
+            c.customer_id = result.getInt("n");
+            return c;
+        }catch(SQLIntegrityConstraintViolationException i) {
+            Helper.notify("error", "Duplicate customer ID detected. Please try again later.", true);
+            return null;
+        }catch(Exception e) {
+            Helper.notify("warn", "Failed creating a new user account. Please try again.", true);
+            return null;
+        }
+    }
+
+    public User update_user(User c) {
+        ResultSet result;
+        try {
+            update_user = con.prepareStatement("SELECT update_customer(?,?,?,?) as n from dual");
+            update_user.setInt(1, c.customer_id);
+            update_user.setString(2, c.first_name);
+            update_user.setString(3, c.last_name);
+            update_user.setString(4, c.email);
+            result = update_user.executeQuery();
+        }catch(SQLIntegrityConstraintViolationException i) {
+            Helper.notify("error", "Duplicate customer ID detected. Please try again later.", true);
+            return null;
+        }catch(Exception e) {
+            e.printStackTrace();
+            Helper.notify("warn", "Failed updating an account. Please try again.", true);
+            return null;
+        }
+        return null;
     }
 }

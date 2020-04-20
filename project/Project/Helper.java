@@ -1,7 +1,7 @@
 import java.io.*;
-import java.security.UnrecoverableEntryException;
 import java.util.*;
 import java.sql.*;  
+import java.text.SimpleDateFormat;
 class Helper {
     private static Connection con;
     private static GenOperations ops;
@@ -59,7 +59,80 @@ class Helper {
     public static String get_string(final String msg) {
         Scanner scnr = new Scanner(System.in); 
         System.out.print(msg);
-        return scnr.nextLine();
+        String res = scnr.nextLine();
+        if(res.equals("")){
+            notify("warn", "Blank string is not allowed.", true);
+            return get_string(msg);
+        }
+        else 
+            return res;    
+    }
+
+    public static String get_string_allow(final String msg) {
+        Scanner scnr = new Scanner(System.in); 
+        System.out.print(msg);
+        String res = scnr.nextLine();
+        return res;    
+    }
+
+    public static java.util.Date get_date(final String msg, final String fmt) {
+        String date_str = Helper.get_string(msg);
+
+        java.util.Date now = new java.util.Date();
+        try{
+            java.util.Date date = new SimpleDateFormat(fmt).parse(date_str);
+            long diff = now.getTime() - date.getTime();
+            if(diff <= 0) {
+                notify("warn", "Your date is in the future/is now.", true);
+                throw new Exception();
+            }
+            return date;  
+        }catch(Exception e) {
+            notify("warn", "Invalid date string entered.", true);
+            return get_date(msg, fmt);
+        }
+    }
+
+    public static String get_email(final String msg) {
+
+        String res = get_string(msg);
+        //this is obviously a terrible way to validate an email, and would best be handled by an external library.
+        boolean hasAt = res.contains("@");
+        boolean hasDot = res.contains(".");
+
+        if(hasAt && hasDot) {
+            return res;
+        } else {
+            notify("warn", "Invalid email entered.", true);
+            return get_email(msg);
+        }
+              
+    }
+
+    public static String get_email_allow(final String msg) {
+
+        String res = get_string_allow(msg);
+        if(res.equals("")) {
+            return "";
+        }
+        //this is obviously a terrible way to validate an email, and would best be handled by an external library.
+        boolean hasAt = res.contains("@");
+        boolean hasDot = res.contains(".");
+
+        if(hasAt && hasDot) {
+            return res;
+        } else {
+            notify("warn", "Invalid email entered.", true);
+            return get_email(msg);
+        }
+              
+    }
+
+    public static String prompt_sensitive(final String msg) {
+        Console console = System.console(); 
+        String password = new String(console.readPassword(msg));
+        //no limitation on blank string here.
+        return password;
     }
 
     public static Integer get_int(final String msg) {

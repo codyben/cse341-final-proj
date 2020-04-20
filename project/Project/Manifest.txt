@@ -1,2 +1,2 @@
 Main-class: Project
-Class-Path: ojdbc8.jar
+Class-Path: lib/ojdbc8.jar

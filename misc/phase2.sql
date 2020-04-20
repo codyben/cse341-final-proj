@@ -193,4 +193,28 @@ CREATE TABLE customer_cards
     customer_id NUMBER(10) not null REFERENCES customer(customer_id),
     constraint customer_cards_pk PRIMARY KEY (card_id, customer_id)
 );
+
+create table card_account
+(
+    acct_id NUMBER REFERENCES checking_account(acct_id),
+    card_id NUMBER REFERENCES debit_card(card_id),
+    add_date date,
+    constraint card_acc_pk PRIMARY KEY (acct_id, card_id)
+);
+
+
+create table card_actions 
+(
+    action_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
+    amount NUMBER(15) not null,
+    action_time date,
+    constraint card_actions_pk PRIMARY KEY (action_id)
+);
+
+create table loan_payment_location
+(
+    payment_id NUMBER not null REFERENCES loan_action(payment_id),
+    location_id NUMBER not null REFERENCES branch(branch_id),
+    CONSTRAINT loan_payment_location_pk PRIMARY KEY(payment_id)
+);
     

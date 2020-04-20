@@ -1,1 +1,1 @@
-./make_jar.sh && java -jar Project/cob322.jar
+./make_jar.sh && java -jar cob322.jar

@@ -127,3 +127,22 @@ BEGIN
 SELECT count(*) into num_chck FROM HOLDS NATURAL JOIN checking_account WHERE customer_id = 62;
 RETURN(num_chck);
 end num_checking_accounts;
+
+create or replace function create_new_customer(fname in VARCHAR2, lname in VARCHAR2, d in Date, e in VARCHAR2)
+RETURN number 
+IS new_user_id NUMBER(25,0);
+c_date DATE;
+PRAGMA AUTONOMOUS_TRANSACTION;
+BEGIN
+SELECT SYSTIMESTAMP into c_date FROM dual; 
+INSERT INTO customer(first_name, last_name, creation_date, email, DOB) VALUES(fname,lname, c_date, e, d) RETURNING customer_id INTO new_user_id;
+RETURN(new_user_id);
+end create_new_customer;
+
+create or replace function update_customer(c_id in NUMBER, fname in VARCHAR2, lname in VARCHAR2, e in VARCHAR2)
+RETURN number 
+IS new_user_id NUMBER(25,0);
+BEGIN
+UPDATE customer SET email = e, first_name = fname, last_name = lname WHERE customer_id = c_id;
+RETURN(c_id);
+end update_customer;

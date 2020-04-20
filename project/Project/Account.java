@@ -19,7 +19,7 @@ class Account {
     @Override
     public String toString() {
         String type = "Savings Account";
-        if(this.min_balance < 0) {
+        if(this.min_balance > 0) {
             type = "Checking Account";
         }
         return type+" (ACCT_ID="+this.acct_id+")";

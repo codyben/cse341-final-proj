@@ -7,35 +7,7 @@ class Project{
 
     private static String username;
     private static String password;
-
-    public static String prompt_username() {
-        Scanner scnr = new Scanner(System.in); 
-        System.out.print("Enter username: ");
-        String username = scnr.nextLine();
-        // scnr.close();
-        return username;
-    }
-
-    public static String prompt_password() {
-        // Scanner scnr = new Scanner(System.in);
-        Console console = System.console(); 
-        String password = new String(console.readPassword("Enter password: "));
-        // System.out.println(password);
-        // scnr.close();
-        return password;
-    }
-
-    public static boolean prompt_retry() {
-        Scanner scnr = new Scanner(System.in); 
-        System.out.println("Enter Y to retry, else to quit");
-        String input = scnr.next();
-        // scnr.close();
-        if(input.equals("Y") || input.equals("y")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
+    private final static String host = "edgar1.cse.lehigh.edu";
 
     private static boolean customer() throws UnrecoverableException{
         Client client = new Client("Client", "After confirmation, select a method to view a user from below.");
@@ -44,16 +16,18 @@ class Project{
         if(l == null) {
             return true; //shoot the user back to main prompt.
         }
+        
         // boolean good_location = client.confirm();
         // if(!good_location) {
         //     l = Client.force_location();
         // }
+
         System.out.println("Your current location is: "+Helper.notify_str("notify", l.toString(), true));
         boolean sentinel = client.confirm();
         if(!sentinel) {
             return true; //have the user pick another role.
         }
-        client.provision(new CustomerOperations(Helper.con()));
+        client.provision(new CustomerOperations(Helper.con()), Helper.compute_general());
         do {
             client.set_location(l);
             System.out.println("Your current location is: "+Helper.notify_str("notify", l.toString(), true));
@@ -95,12 +69,10 @@ class Project{
             password = args[1];
         } else {
             Helper.notify("notify", "Enter credentials to connect to Edgar1", true);
-            username = prompt_username();
-            password = prompt_password();
+            username = Helper.get_string("Enter username: ");
+            password = Helper.prompt_sensitive("Enter password: ");
         }
-        String host = "edgar1.cse.lehigh.edu";
-        Project.username = username;
-        Project.password = password;
+
         try (Connection con=DriverManager.getConnection("jdbc:oracle:thin:@"+host+":1521:cse241",username,password);Statement s=con.createStatement();) {
             /* Add a shutdown hook in order to handle a ctrl-c exit */
             /* src: https://www.geeksforgeeks.org/jvm-shutdown-hook-java/ */
@@ -131,12 +103,12 @@ class Project{
         } catch(Exception e) {
             String msg = e.getMessage();
             // e.printStackTrace();
-            System.out.println(msg);
+            // System.out.println(msg);
             if(msg == null) {
                 Helper.notify("error", "An unrecoverable error has occurred. The program will now exit.", true);
                 System.exit(1);
             }
-            if(msg.contains("01017")) {
+            if(msg.contains("01017") || msg.contains("01005")) {
                 System.out.println();
                 Helper.notify("error", "Invalid login credentials.", true);
                 System.out.println();
@@ -144,8 +116,7 @@ class Project{
                 if(yn)
                     main(null);
                 else{
-                    Helper.notify("success", "Goodbye.", true);
-                    System.exit(0);
+                    Helper.exit();
                 } 
                     
             } else if(msg.contains("IO Error")) {

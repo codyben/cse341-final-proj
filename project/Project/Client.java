@@ -6,13 +6,15 @@ import java.text.DecimalFormat;
 
 class Client extends ProjectInterface {
 	CustomerOperations ops;
+	GenOperations gops;
 	private Location loc;
 	Client(String n, String e) {
 		super(n,e);
 	}
 
-	public void provision(CustomerOperations o) {
+	public void provision(CustomerOperations o, GenOperations g) {
 		ops = o;
+		gops = g;
 	}
 
 	public void set_location(Location l) {
@@ -27,25 +29,40 @@ class Client extends ProjectInterface {
 		}
 		return temp;
 	}
+	/**
+	 * Have the user pick how they want to go about using the interface.
+	 * @return
+	 */
 	public User divergent_paths() {
+		int user_count = gops.get_user_count();
+		int pmap = 1;
 		HashMap<Integer, String> paths = new HashMap<>();
 		HashMap<String, User> query_result = new HashMap<>();
 		HashMap<Integer, String> get_user = new HashMap<>();
-		String cust_id = "Select customer by ID.";
-		String cust_name = "Select customer by name.";
+		String creat_cust = "Create new customer. (TODO)";
+		String cust_id = "Select customer by ID. (TODO)";
+		String cust_name = "Select customer by name. (TODO)";
 		String all = "Show all customers.";
 		String quit = "Restart client interface...";
-		paths.put(1, cust_id);
-		paths.put(2, cust_name);
-		paths.put(3, all);
-		paths.put(4, quit);
+		if(user_count <= 0) {
+			paths.put(pmap++, creat_cust);
+		} else {
+			paths.put(pmap++, creat_cust);
+			paths.put(pmap++, cust_id);
+			paths.put(pmap++, cust_name);
+			paths.put(pmap++, all);
+			paths.put(pmap++, quit);
+		}
+
 
 		String result = Helper.get_choice(paths, null);
 		User customer = null; 
 
 		if(result.equals(cust_id)) {
+			int cust_search_id = Helper.get_int("Please enter the customer ID.");
 			return customer;
 		} else if(result.equals(cust_name)) {
+			String cust_search_name = Helper.get_string("Please enter the customer name.");
 			return customer;
 		} else if(result.equals(all)) {
 			query_result = ops.list_all_users();
@@ -66,6 +83,27 @@ class Client extends ProjectInterface {
 
 		} else if(result.equals(quit)) {
 			return null;
+		} else if(result.equals(creat_cust)) {
+			String customer_first_name = Helper.get_string("Enter the customer's first name: ");
+			String customer_last_name = Helper.get_string("Enter the customer's last name: ");
+			String customer_email = Helper.get_email("Enter the customer's email: ");
+			String format = "MM/dd/yyyy";
+			java.util.Date customer_DOB = Helper.get_date("Enter a date in the form ("+format+"): ", format);
+			User new_user = new User(customer_first_name, customer_last_name, customer_DOB, customer_email);
+			new_user = new_user.commit();
+			if(new_user == null) {
+				return null; //shoot user back to prompt.
+			}
+
+			if(new_user != null) {
+				Helper.notify("green", "\n++Created new user: "+new_user+"\n", true);
+				boolean do_we_continue_with_new_user = Helper.confirm("Would you like to continue with the newly created user?");
+				if(do_we_continue_with_new_user) {
+					return new_user; //proceed with new user.
+				} else {
+					return null; //shoot back to prompt.
+				}
+			}
 		}
 
 		return customer;	
@@ -109,8 +147,8 @@ class Client extends ProjectInterface {
 			final String interface2a = "Account Deposit.";
 			final String interface2b = "Account Withdrawal.";
 			final String interface3Alpha = "Loan Payment.";
-			final String interface3Beta = "Credit Card Payment.";
-			final String interface4 = "Open a new account. (BUG)";
+			final String interface3Beta = "Credit Card Payment. (TODO)";
+			final String interface4 = "Open a new account.";
 			// final String interface5 = "Obtain a new / replacement credit card";
 			// final String interface6 = "Take out a new loan";
 			final String interface7Alpha = "Make a purchase with your cards.";
@@ -120,9 +158,11 @@ class Client extends ProjectInterface {
 			final String interface8 = "View account summary.";
 			final String interface8b = "View card summary.";
 			final String quit = "Return to previous.";
+			final String edit = "View/edit my details.";
 			HashMap<Integer, String> paths = new HashMap<>();
 			int i = 1;
 			HashMap<Integer, String> accounts = new HashMap<>();
+			paths.put(i++, edit); //always allow a user to see/edit their details.
 			paths.put(i++, interface5b); //always allow a user to request a card.
 			paths.put(i++, interface4); //always allow a user to open a new account.
 			
@@ -246,6 +286,8 @@ class Client extends ProjectInterface {
 					c.request_card(ops);
 				} else if(choice.equals(interface4)) {
 					c.create_new_account();
+				} else if(choice.equals(edit)) {
+					c.prompt_new_details();
 				}
 				break;
 			}while(!isOK);

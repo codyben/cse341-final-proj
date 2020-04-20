@@ -5,12 +5,16 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.text.DecimalFormat;
 class User {
-    public int customer_id;
+    public Integer customer_id;
     public String first_name;
     public String last_name;
     public Date dob;
+    public Date creation_date;
+    public String email;
     public String full_name;
     public int num_accounts = 0;
+    public int num_checking = 0;
+    public int num_savings = 0;
     public int num_credit = 0;
     public int num_debit = 0;
     public int num_loans = 0;
@@ -20,13 +24,24 @@ class User {
     public ArrayList<Debit> user_debit;
     public ArrayList<Credit> user_credit;
     public HashMap<String, Card> user_cards;
+    public final CustomerOperations ops = new CustomerOperations(Helper.con());
 
-    User(int c, String f, String l, Date d) {
+    User(int c, String f, String l, Date d, String e) {
         customer_id = c;
         first_name = f;
         last_name = l;
         dob = d;
         full_name = first_name +" "+last_name;
+        email = e;
+        
+    }
+
+    User(String f, String l, Date d, String e) {
+        first_name = f;
+        last_name = l;
+        dob = d;
+        full_name = first_name +" "+last_name;
+        email = e; 
         
     }
 
@@ -34,9 +49,87 @@ class User {
     public String toString() {
         return full_name + "(ID="+Integer.toString(customer_id)+")";
     }
+
+
+    public User prompt_new_details() {
+        HashMap<Integer, String> promptmap = new HashMap<>();
+        Helper.notify("heading", "\nMy current details: \n", true);
+        System.out.println("+First Name: "+first_name);
+        System.out.println("+Last Name: "+last_name);
+        System.out.println("+Email: "+email);
+        int i = 1;
+
+        final String correct = "These details are correct. Continue.";
+        final String incorrect = "This is incorrect. Let me re-enter information.";
+        final String quit = "Quit.";
+
+        promptmap.put(i++, correct);
+        promptmap.put(i++, incorrect);
+        promptmap.put(i++, quit);
+
+        
+        boolean do_edit = Helper.confirm("Do you wish to edit your account details?");
+
+        if(do_edit) {
+            String new_first = Helper.get_string_allow("Enter new first name (press enter to keep current): ");
+            String new_last = Helper.get_string_allow("Enter new last name (press enter to keep current): ");
+            String new_email = Helper.get_email_allow("Enter new email (press enter to keep current): ");
+
+            boolean fchange = new_first.equals("");
+            boolean lchange = new_last.equals("");
+            boolean echange = new_email.equals("");
+
+
+
+            if(fchange && lchange && echange) {
+                Helper.notify("warn", "No changes have occured. Returning to previous.", true);
+                return this; //no changes so don't do any updates.
+            }
+            Helper.notify("heading", "\nUpdates: ", true);
+
+            if(!fchange) {
+                System.out.print("New first name: ");
+                Helper.notify("warn", new_first, true);
+            }
+
+            if(!lchange) {
+                System.out.print("New last name: ");
+                Helper.notify("warn", new_last, true);
+            }
+
+            if(!echange) {
+                System.out.print("New email: ");
+                Helper.notify("warn", new_email, true);
+            }
+
+            String choice = Helper.get_choice(promptmap, null);
+
+            if(choice.equals(quit)) {
+                return this; //return unchanged User to the uhhm, user.
+            } else if(choice.equals(incorrect)) {
+                return prompt_new_details(); //give it anotha try.
+            }
+
+            //implicit else for continuing onwards.
+
+            this.first_name = fchange ? this.first_name : new_first;
+            this.last_name = lchange ? this.last_name : new_last;
+            this.email = echange ? this.email : new_email;
+            this.full_name = this.first_name+" "+this.last_name;
+            this.commit();
+            Helper.notify("green", "++Successfully upated account information.", true);
+            return this;
+        }
+
+        return this; //return the unchanged object.
+
+
+    }
     public void compute() {
         CustomerOperations sync = new CustomerOperations(Helper.con());
         num_accounts = sync.num_accounts_for_user(this);
+        num_checking = sync.num_checking_accounts(this);
+        num_savings = num_accounts - num_checking;
         num_credit = sync.num_credit_for_user(this);
         num_debit = sync.num_debit_for_user(this);
         total_cards = sync.num_cards_for_user(this);
@@ -54,8 +147,19 @@ class User {
     }
 
 
+    public void welcome_message() {
+        Helper.notify("green", "\t++Welcome "+full_name+"!", true);
+
+
+    }
+
     public void format_data() {
-        String acc = "Number of accounts: ";
+        /* GENERALIZE COLUMN PRINTING */
+        // String heading = Helper.notify_str("heading",this.toString(), true );
+        // String account_header = "Savings Accounts\tChecking Accounts\tTotal Accounts";
+        String acc = "Total savings/checking accounts: ";
+        String checking = "Number of checking accounts: ";
+        String savings = "Number of savings accounts: ";
         String loan = "Number of loans: ";
         String debit = "Number of debit cards: ";
         String credit = "Number of credit cards: ";
@@ -65,9 +169,21 @@ class User {
         String z_str = Helper.notify_str("warn", 0, false);
 
         if(num_accounts == 0) {
-            acc += z_str;
+            acc = z_str;
         } else {
             acc += Helper.notify_str("success", num_accounts, false);
+        }
+
+        if(num_savings == 0){
+            savings = z_str;
+        } else {
+            savings += Helper.notify_str("success", num_savings, false);
+        }
+
+        if(num_checking == 0) {
+            checking = z_str;
+        } else {
+            checking += Helper.notify_str("success", num_checking, false);
         }
 
         if(num_loans == 0) {
@@ -94,6 +210,8 @@ class User {
             card += Helper.notify_str("success", total_cards, false);
         }
 
+        System.out.println(savings);
+        System.out.println(checking);
         System.out.println(acc);
         System.out.println(loan);
         System.out.println(credit);
@@ -147,7 +265,7 @@ class User {
         HashMap<Integer, String> promptmap = new HashMap<>();
         int i = 1;
         for(final Account a : user_accounts) {
-            if(a.min_balance < 0) {
+            if(a.min_balance > 0) {
                 promptmap.put(i++, a.toString());
             }
         }
@@ -236,7 +354,7 @@ class User {
         promptmap.put(1, credit);
         if(num_accounts <= 0) {
             Helper.notify("warn", "A Debit Card cannot be requested as you have no accounts.", true);
-        } else {
+        } else if(num_checking > 0) {
             promptmap.put(2, debit);
         }
         
@@ -290,7 +408,10 @@ class User {
         ops.create_credit_card(new_card);
         return false;
     }
-
+    /**
+     * Lets a user pick the type of account to be created, then delegates the task out after collecting needed data.
+     * @return
+     */
     public boolean create_new_account() {
         /**
          * SQL Steps:
@@ -302,7 +423,7 @@ class User {
         promptmap.put(2, "Checking Account");
         promptmap.put(3, "Return to Previous.");
         boolean confirm = false;
-        DecimalFormat df = new DecimalFormat("#.0#");
+        DecimalFormat df = new DecimalFormat("#.00");
         double new_interest = 0;
         double minimum_balance = 0;
         String acc_choice = "";
@@ -316,7 +437,7 @@ class User {
             
             new_interest = Helper.get_double("Enter the interest rate for the account: %");
 
-            if(acc_choice.equals("Savings Account")) {
+            if(acc_choice.equals("Checking Account")) {
                 minimum_balance = Helper.get_double("Enter the minimum balance for the account: $");
                 confirm = Helper.confirm("Creating a "+acc_choice+" with interest of "+df.format(new_interest)+"% and minimum balance of "+df.format(minimum_balance)+"$\nIs this ok?");
             } else {
@@ -364,5 +485,19 @@ class User {
         return ops.create_savings_account(a);
     }
 
+    /**
+     * Takes our user class and either creates a new account (for a null ID) or updates an existing account.
+     * Returns object of new user account.
+     * @return
+     */
+    public User commit() {
+        if(this.customer_id == null) {
+            //create a new acccount.
+            ops.create_new_user(this);
+        } else {
+            ops.update_user(this);
+        }
+        return this;
+    }
 
 }
