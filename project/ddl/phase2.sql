@@ -1,3 +1,26 @@
+drop table branch;
+drop table performs;
+drop table branch;
+drop table atm;
+drop table atm_locations;
+drop table account_actions;
+drop table performs;
+drop table checking_account;
+drop table account;
+drop table secured_loan;
+drop table collateral;
+drop table credit_card;
+drop table debit_card;
+drop table card;
+drop table purchases;
+drop table buys;
+drop table holds;
+drop table loan_action;
+drop table loan_payment;
+drop table loan;
+drop table location;
+drop table customer;
+
 create table customer
 (
     customer_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
@@ -11,23 +34,17 @@ create table customer
     constraint customer_pk PRIMARY KEY (customer_id)
 );
 
-CREATE TABLE location
-(	
-    "LOCATION_ID" NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
-	"CITY" VARCHAR2(50) not null, 
-	"STATE" VARCHAR2(50) not null, 
-	"ZIP" NUMBER(5,0) not null, 
-	"STREET" VARCHAR2(50) not null, 
-	"STREET_NUM" NUMBER(10,0) not null, 
-	"ADDRESS" VARCHAR2(300) GENERATED ALWAYS AS (TO_CHAR("STREET_NUM")||' '||"STREET"||', '||"CITY"||' '||"STATE"||' '||TO_CHAR("ZIP")) VIRTUAL , 
-	CONSTRAINT "LOCATION_PK" PRIMARY KEY ("LOCATION_ID")
+create table location
+(
+    location_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
+    address varchar(50) not null,
+    constraint location_pk PRIMARY KEY (location_id)
 );
 
 create table branch 
 (
     branch_id NUMBER(10) not null REFERENCES location(location_id),
-    "open" varchar(8),
-    "close" varchar(8),
+    hours_of_operation varchar(1) not null,
     constraint branch_pk PRIMARY KEY (branch_id)
 );
 
@@ -46,6 +63,7 @@ create table atm_locations
     constraint atm_locations_pk PRIMARY KEY (atm_id, location_id) 
 );
 
+
 create table account
 (
     acct_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
@@ -55,19 +73,20 @@ create table account
     constraint acc_pk PRIMARY KEY (acct_id)
 );
 
+
 create table checking_account 
 (
      acct_id NUMBER(10) not null REFERENCES account(acct_id),
-     min_balance NUMBER(15,3) default 5 not null,
+     min_balance NUMBER(2) default 5 not null,
      constraint ck_acct_pk PRIMARY KEY (acct_id)
 );
 
-
 create table loan
-( 
+(
+    
     loan_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
-    interest NUMBER(7,5) not null,
-    payment NUMBER(15,3) not null,
+    interest DECIMAL(6,5) not null,
+    payment DECIMAL(8,8) not null,
     amount number(15) not null,
     constraint loan_pk PRIMARY KEY (loan_id)
 );
@@ -114,9 +133,9 @@ create table buys
 create table credit_card
 (
     card_id NUMBER(10) REFERENCES card(card_id) not null,
-    interest NUMBER(7,5) not null,
+    interest DECIMAL(6,5) not null,
     balance_due AS (running_balance * (1+interest)),
-    running_balance NUMBER(7,5) default 0 not null,
+    running_balance FLOAT(63) default 0 not null,
     constraint credit_pk PRIMARY KEY (card_id)
 );
 
@@ -128,7 +147,8 @@ create table debit_card
     constraint debit_pk PRIMARY KEY (card_id)
 );
 
-create table customer_accounts 
+
+create table holds 
 (
     customer_id NUMBER(10) REFERENCES customer(customer_id),
     acct_id NUMBER(10) REFERENCES account(acct_id),
@@ -139,7 +159,7 @@ create table customer_accounts
 create table loan_action 
 (
     payment_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
-    amount number(15, 3) not null,
+    amount number(10) not null,
     "time" date,
     loan_id REFERENCES loan(loan_id),
     location_id REFERENCES location(location_id),
@@ -156,13 +176,12 @@ create table loan_payment
 create table account_actions 
 (
     action_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
-    amount NUMBER(15, 3) not null,
+    amount NUMBER(15) not null,
     action_time date,
     location_id NUMBER(10) REFERENCES location(location_id),
     constraint acct_actions_pk PRIMARY KEY (action_id)
 );
-
-create table account_performs
+create table performs
 (
     customer_id NUMBER(10) not null REFERENCES customer(customer_id),
     action_id NUMBER(10) not null REFERENCES account_actions(action_id),
@@ -170,6 +189,8 @@ create table account_performs
     constraint acct_performs_pk PRIMARY KEY (action_id)
     
 );
+ALTER TABLE location drop column address;
+ALTER TABLE location add ( address VARCHAR2(300) GENERATED ALWAYS as ( to_char(street_num) || ' ' || street || ' ' || city || ' ' || state || ' ' || to_char(zip)) VIRTUAL);
 
 CREATE TABLE customer_cards
 (
@@ -186,21 +207,14 @@ create table card_account
     constraint card_acc_pk PRIMARY KEY (acct_id, card_id)
 );
 
+
 create table card_actions 
 (
     action_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
-    amount NUMBER(15, 3) not null,
+    amount NUMBER(15) not null,
     action_time date,
     constraint card_actions_pk PRIMARY KEY (action_id)
 );
-
-create table card_performs
-(
-    customer_id NUMBER not null REFERENCES customer(customer_id),
-    action_id NUMBER not null REFERENCES card_actions(action_id), 
-    constraint card_performs_pk PRIMARY KEY (customer_id, action_id)
-);
-
 
 create table loan_payment_location
 (
