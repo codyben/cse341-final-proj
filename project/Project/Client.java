@@ -8,6 +8,7 @@ class Client extends ProjectInterface {
 	CustomerOperations ops;
 	GenOperations gops;
 	private Location loc;
+	private boolean isAtBranch = false;
 	Client(String n, String e) {
 		super(n,e);
 	}
@@ -18,6 +19,8 @@ class Client extends ProjectInterface {
 	}
 
 	public void set_location(Location l) {
+		if(l instanceof Branch)
+			isAtBranch = true;
 		loc = l;
 	}
 
@@ -44,17 +47,26 @@ class Client extends ProjectInterface {
 		String cust_name = "Select customer by name. (TODO)";
 		String all = "Show all customers.";
 		String quit = "Restart client interface...";
-		if(user_count <= 0) {
+		
+		if(isAtBranch) {
 			paths.put(pmap++, creat_cust);
-		} else {
-			paths.put(pmap++, creat_cust);
+		}
+
+		if(user_count <= 0 && !isAtBranch) {
+			Helper.notify("warn", "Please go to your local branch for assistance. Thank you.", true); //there's no users in DB, so we can't present any options.
+			return null;
+		} else  {
+			// paths.put(pmap++, creat_cust);
 			paths.put(pmap++, cust_id);
 			paths.put(pmap++, cust_name);
 			paths.put(pmap++, all);
 			paths.put(pmap++, quit);
 		}
 
-
+		if(paths.size() == 0) {
+			Helper.notify("warn", "Please go to your local branch for assistance. Thank you.", true); //there's no users in DB, so we can't present any options.
+			return null;
+		}
 		String result = Helper.get_choice(paths, null);
 		User customer = null; 
 
@@ -87,9 +99,10 @@ class Client extends ProjectInterface {
 			String customer_first_name = Helper.get_string("Enter the customer's first name: ");
 			String customer_last_name = Helper.get_string("Enter the customer's last name: ");
 			String customer_email = Helper.get_email("Enter the customer's email: ");
+			String customer_addy = Helper.get_string("Enter the customer's address: "); //don't do any aggressive address parsing.
 			String format = "MM/dd/yyyy";
 			java.util.Date customer_DOB = Helper.get_date("Enter a date in the form ("+format+"): ", format);
-			User new_user = new User(customer_first_name, customer_last_name, customer_DOB, customer_email);
+			User new_user = new User(customer_first_name, customer_last_name, customer_DOB, customer_email, customer_addy);
 			new_user = new_user.commit();
 			if(new_user == null) {
 				return null; //shoot user back to prompt.
@@ -136,16 +149,13 @@ class Client extends ProjectInterface {
 
 	public boolean intent(final User c) throws UnrecoverableException{
 		boolean cont = true;
-		boolean isAtBranch = false;
-		if(this.loc instanceof Branch) {
-			isAtBranch = true; //keep this here so we can do some filtering.
-		}
 		do {
 			c.compute();
 			c.format_data();
 			// final String interface1 = "Refresh account details.";
 			final String interface2a = "Account Deposit.";
 			final String interface2b = "Account Withdrawal.";
+			final String interface2c = "Transfer Funds.";
 			final String interface3Alpha = "Loan Payment.";
 			final String interface3Beta = "Credit Card Payment. (TODO)";
 			final String interface4 = "Open a new account.";
@@ -163,18 +173,30 @@ class Client extends ProjectInterface {
 			int i = 1;
 			HashMap<Integer, String> accounts = new HashMap<>();
 			paths.put(i++, edit); //always allow a user to see/edit their details.
-			paths.put(i++, interface5b); //always allow a user to request a card.
-			paths.put(i++, interface4); //always allow a user to open a new account.
+			
+			if(isAtBranch) {
+				paths.put(i++, interface5b); //always allow a user to request a card if they're at a branch.
+				paths.put(i++, interface4); //always allow a user to open a new account if they're at a branch.
+			}
+			
 			
 			/* Dynamically create a menu based on the user's current data */
 			boolean acc_ops = c.num_accounts > 0;
 			boolean cred_ops = c.num_credit > 0;
 			boolean loan_ops = c.num_credit > 0;
 			boolean card_ops = c.total_cards > 0;
+			boolean trans_ops = c.num_accounts >= 2;
 			if(acc_ops) {
 				accounts = c.get_accounts();
-				paths.put(i++, interface2a);
+
+				if(isAtBranch) {
+					paths.put(i++, interface2a); //only allow a deposit when at a Branch.
+				}
+				
 				paths.put(i++, interface2b);
+				if(trans_ops) {
+					paths.put(i++, interface2c); //only allow fund transfers when the user has more/= than 2 accounts.
+				}
 				paths.put(i++, interface8);
 				
 			}  
@@ -222,13 +244,13 @@ class Client extends ProjectInterface {
 							isOK = Helper.confirm("Is the amount: "+Double.toString(action_amt)+"$ ok?");
 						}
 						if(isOK)
-							ops.do_withdrawal(action_amt, this.loc.location_id, acct.acct_id);
+							ops.do_withdrawal(action_amt, this.loc.location_id, acct.acct_id, c.customer_id);
 	
 					} else {
 						action_amt = this.prompt_deposit(acct.balance);
 						isOK = Helper.confirm("Is the amount: "+Double.toString(action_amt)+"$ ok?");
 						if(isOK)
-							ops.do_deposit(action_amt, this.loc.location_id, acct.acct_id);
+							ops.do_deposit(action_amt, this.loc.location_id, acct.acct_id, c.customer_id);
 					}
 					if(!rejection) {
 						c.get_accounts();
@@ -288,6 +310,8 @@ class Client extends ProjectInterface {
 					c.create_new_account();
 				} else if(choice.equals(edit)) {
 					c.prompt_new_details();
+				} else if(choice.equals(interface2c)) {
+					c.fund_transfer(accounts, loc);
 				}
 				break;
 			}while(!isOK);
@@ -307,6 +331,7 @@ class Client extends ProjectInterface {
 	}
 
 	private double prompt_withdrawal(double curr_bal, double min_balance) {
+		//FIX THIS
 		if(min_balance == -1) {
 			min_balance = 0;
 		}

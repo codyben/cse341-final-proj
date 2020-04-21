@@ -50,12 +50,15 @@ class CustomerOperations extends DatabaseOperations {
             while(result.next()) {
                 String fname = result.getString("first_name");
                 String lname = result.getString("last_name");
+                String full_name = result.getString("name");
                 // String d_name = fname +" "+lname;
                 java.util.Date dob = result.getDate("dob");
                 int c_id = result.getInt("customer_id");
                 String email = result.getString("email");
-                User temp = new User(c_id, fname, lname, dob, email);
-                m.put(temp.full_name+" (ID="+temp.customer_id+")", temp);
+                String addy  = result.getString("address");
+                java.util.Date creaDate = result.getDate("creation_date");
+                User temp = new User(c_id, fname, lname, dob, email, full_name, creaDate, addy);
+                m.put(temp.toString(), temp);
             }
             return m;
         } catch(Exception e) {
@@ -71,7 +74,7 @@ class CustomerOperations extends DatabaseOperations {
 
             ResultSet result;
 
-            account_details = con.prepareStatement("SELECT acct_id, balance, interest, creation_date, customer_id, add_date, nvl(min_balance, -1) as min_balance FROM ACCOUNT NATURAL JOIN HOLDS NATURAL LEFT OUTER JOIN CHECKING_ACCOUNT WHERE customer_id = ?");
+            account_details = con.prepareStatement("SELECT acct_id, balance, interest, creation_date, customer_id, add_date, nvl(min_balance, -1) as min_balance FROM ACCOUNT NATURAL JOIN customer_accounts NATURAL LEFT OUTER JOIN CHECKING_ACCOUNT WHERE customer_id = ?");
             account_details.setInt(1, customer.customer_id);
             result = account_details.executeQuery();
             while(result.next()) {
@@ -245,14 +248,15 @@ class CustomerOperations extends DatabaseOperations {
      * @param acct_id
      * @return
      */
-    public boolean do_withdrawal(double amount, final int loc_id, final int acct_id) {
+    public boolean do_withdrawal(double amount, final int loc_id, final int acct_id, final int cust_id) {
         amount *= -1;
         try {
             ResultSet result;
-            num_cards = con.prepareStatement("SELECT do_account_action(?, ?, ?) as c from dual");
+            num_cards = con.prepareStatement("SELECT do_account_action(?, ?, ?, ?) as c from dual");
             num_cards.setDouble(1, amount);
             num_cards.setInt(2, loc_id);
             num_cards.setInt(3, acct_id);
+            num_cards.setInt(4, cust_id);
             result = num_cards.executeQuery();
             result.next();
             if(result.getInt("c") < 0 ) return false; else return true; 
@@ -297,14 +301,15 @@ class CustomerOperations extends DatabaseOperations {
      * @param acct_id
      * @return
      */
-    final public boolean do_deposit(final double amount, final int loc_id, final int acct_id) {
+    final public boolean do_deposit(final double amount, final int loc_id, final int acct_id, final int cust_id) {
         
         try {
             ResultSet result;
-            num_cards = con.prepareStatement("SELECT do_account_action(?, ?, ?) as c from dual");
+            num_cards = con.prepareStatement("SELECT do_account_action(?, ?, ?, ?) as c from dual");
             num_cards.setDouble(1, amount);
             num_cards.setInt(2, loc_id);
             num_cards.setInt(3, acct_id);
+            num_cards.setInt(4, cust_id);
             result = num_cards.executeQuery();
             result.next();
             if(result.getInt("c") < 0 ) return false; else return true; 
@@ -538,11 +543,12 @@ class CustomerOperations extends DatabaseOperations {
     public User create_new_user(User c) {
         ResultSet result;
         try {
-            create_new_user = con.prepareStatement("SELECT create_new_customer(?,?,?,?) as n from dual");
+            create_new_user = con.prepareStatement("SELECT create_new_customer(?,?,?,?,?) as n from dual");
             create_new_user.setString(1, c.first_name);
             create_new_user.setString(2, c.last_name);
             create_new_user.setDate(3, new java.sql.Date(c.dob.getTime()));
             create_new_user.setString(4, c.email);
+            create_new_user.setString(5, c.address);
             result = create_new_user.executeQuery();
             result.next();
             c.customer_id = result.getInt("n");
@@ -559,11 +565,12 @@ class CustomerOperations extends DatabaseOperations {
     public User update_user(User c) {
         ResultSet result;
         try {
-            update_user = con.prepareStatement("SELECT update_customer(?,?,?,?) as n from dual");
+            update_user = con.prepareStatement("SELECT update_customer(?,?,?,?, ?) as n from dual");
             update_user.setInt(1, c.customer_id);
             update_user.setString(2, c.first_name);
             update_user.setString(3, c.last_name);
             update_user.setString(4, c.email);
+            update_user.setString(5, c.address);
             result = update_user.executeQuery();
         }catch(SQLIntegrityConstraintViolationException i) {
             Helper.notify("error", "Duplicate customer ID detected. Please try again later.", true);

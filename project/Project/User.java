@@ -12,6 +12,7 @@ class User {
     public Date creation_date;
     public String email;
     public String full_name;
+    public String address;
     public int num_accounts = 0;
     public int num_checking = 0;
     public int num_savings = 0;
@@ -25,29 +26,33 @@ class User {
     public ArrayList<Credit> user_credit;
     public HashMap<String, Card> user_cards;
     public final CustomerOperations ops = new CustomerOperations(Helper.con());
+    DateFormat dfmt = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss");  
 
-    User(int c, String f, String l, Date d, String e) {
+    User(int c, String f, String l, Date d, String e, String n, Date creation_date, String addy) {
         customer_id = c;
         first_name = f;
         last_name = l;
         dob = d;
-        full_name = first_name +" "+last_name;
+        full_name = n;
         email = e;
+        this.creation_date = creation_date;
+        address = addy;
         
     }
 
-    User(String f, String l, Date d, String e) {
+    User(String f, String l, Date d, String e, String addy) {
         first_name = f;
         last_name = l;
         dob = d;
         full_name = first_name +" "+last_name;
         email = e; 
+        address = addy;
         
     }
 
     @Override
     public String toString() {
-        return full_name + "(ID="+Integer.toString(customer_id)+")";
+        return full_name + " (ID="+Integer.toString(customer_id)+")";
     }
 
 
@@ -57,6 +62,8 @@ class User {
         System.out.println("+First Name: "+first_name);
         System.out.println("+Last Name: "+last_name);
         System.out.println("+Email: "+email);
+        System.out.println("+Address: "+address);
+        System.out.println("+Account creation date: "+dfmt.format(creation_date));
         int i = 1;
 
         final String correct = "These details are correct. Continue.";
@@ -74,14 +81,16 @@ class User {
             String new_first = Helper.get_string_allow("Enter new first name (press enter to keep current): ");
             String new_last = Helper.get_string_allow("Enter new last name (press enter to keep current): ");
             String new_email = Helper.get_email_allow("Enter new email (press enter to keep current): ");
+            String new_addy = Helper.get_email_allow("Enter new address (press enter to keep current): ");
 
             boolean fchange = new_first.equals("");
             boolean lchange = new_last.equals("");
             boolean echange = new_email.equals("");
+            boolean addchange = new_addy.equals("");
 
 
 
-            if(fchange && lchange && echange) {
+            if(fchange && lchange && echange && addchange) {
                 Helper.notify("warn", "No changes have occured. Returning to previous.", true);
                 return this; //no changes so don't do any updates.
             }
@@ -102,6 +111,11 @@ class User {
                 Helper.notify("warn", new_email, true);
             }
 
+            if(!addchange) {
+                System.out.print("New address: ");
+                Helper.notify("warn", new_addy, true);
+            }
+
             String choice = Helper.get_choice(promptmap, null);
 
             if(choice.equals(quit)) {
@@ -116,6 +130,7 @@ class User {
             this.last_name = lchange ? this.last_name : new_last;
             this.email = echange ? this.email : new_email;
             this.full_name = this.first_name+" "+this.last_name;
+            this.address = addchange ? this.address : new_addy;
             this.commit();
             Helper.notify("green", "++Successfully upated account information.", true);
             return this;
@@ -169,19 +184,19 @@ class User {
         String z_str = Helper.notify_str("warn", 0, false);
 
         if(num_accounts == 0) {
-            acc = z_str;
+            acc += z_str;
         } else {
             acc += Helper.notify_str("success", num_accounts, false);
         }
 
         if(num_savings == 0){
-            savings = z_str;
+            savings += z_str;
         } else {
             savings += Helper.notify_str("success", num_savings, false);
         }
 
         if(num_checking == 0) {
-            checking = z_str;
+            checking += z_str;
         } else {
             checking += Helper.notify_str("success", num_checking, false);
         }
@@ -416,7 +431,7 @@ class User {
         /**
          * SQL Steps:
          * Create an account.
-         * Insert into holds.
+         * Insert into customer_accounts.
          */
         HashMap<Integer, String> promptmap = new HashMap<>();
         promptmap.put(1, "Savings Account");
@@ -498,6 +513,83 @@ class User {
             ops.update_user(this);
         }
         return this;
+    }
+
+    private double prompt_transfer_amt(final Account a) {
+        DecimalFormat df = new DecimalFormat("#.00");
+        Helper.notify("heading", "Brief account details for: "+a.toString(), true);
+        System.out.println("Balance: $"+df.format(a.balance));
+        double min_balance = (a.min_balance < 0) ? 0 : a.min_balance;
+        double amt = Helper.get_double("Amount to transfer: $");
+        if(amt > a.balance - min_balance) {
+            Helper.notify("warn", "The entered amount is too large for your balance", true);
+            return prompt_transfer_amt(a);
+        } else if(amt <= 0) {
+            Helper.notify("warn", "You cannot enter a negative or zero amount.", true);
+            return prompt_transfer_amt(a);
+        } else {
+            return amt;
+        }
+    }
+
+    public boolean fund_transfer(final HashMap<Integer, String> acctmap, final Location l) {
+        DecimalFormat df = new DecimalFormat("#.00");
+        //do a fund transfer.
+        HashMap<Integer, String> promptmap = new HashMap<>();
+        HashMap<Integer, String> sans_accounts = new HashMap<>();
+
+        String sender_str = Helper.notify_str("header", "Choose an account from which you want to transfer funds from: ", true);
+        String rec_str = Helper.notify_str("header", "Choose an account from which you want to transfer funds to: ", true);
+        
+        String orig_account = Helper.get_choice(acctmap, sender_str);
+        
+        int u = 1;
+        for(Integer k : acctmap.keySet()) {
+            String acct = acctmap.get(k);
+            if(!acct.equals(orig_account)){
+                sans_accounts.put(u++,acct );
+            } //add all but the same account.
+        }
+
+        String second_account = Helper.get_choice(sans_accounts, rec_str);
+        
+        Account sender = accounts.get(orig_account);
+        Account receiver = accounts.get(second_account);
+
+        int m = 1;
+        System.out.println("\n");
+        String key = "Sending Account: "+Helper.notify_str("warn",sender.toString(), false)+" \nReceiving Account: "+Helper.notify_str("warn", receiver.toString(), false)+"\nIs this OK?";
+        String looks_good = "These accounts are correct. Let me continue and transfer funds.";
+        String all_bad = "All the accounts are incorrect and I would like to retry entering them.";
+        String bye = "Quit without proceeding.";
+
+        promptmap.put(m++, looks_good);
+        promptmap.put(m++, all_bad);
+        promptmap.put(m++, bye);
+
+        String oh_no_what_do_we_do = Helper.get_choice(promptmap, key);
+
+        if(oh_no_what_do_we_do.equals(bye)) {
+            return false;
+        } else if(oh_no_what_do_we_do.equals(looks_good)) {
+            double send_amt = Double.parseDouble(df.format(this.prompt_transfer_amt(sender)));
+            boolean confirm_transfer = Helper.confirm("Is transfering the amount: $"+send_amt+" ok?");
+            if(confirm_transfer) {
+                int loc_id = l.location_id;
+                boolean with_ok = ops.do_withdrawal(send_amt, loc_id, sender.acct_id, this.customer_id);
+                if(with_ok) {
+                    boolean dep_ok = ops.do_deposit(send_amt, loc_id, receiver.acct_id, this.customer_id);
+                    if(dep_ok) {
+                        Helper.notify("green", "++Successfully transfered $"+send_amt,  true);
+                        return true;
+                    }
+                }
+            }
+            // return false;
+        } else if(oh_no_what_do_we_do.equals(all_bad)) {
+            return fund_transfer(acctmap, l);
+        }
+        return false;
     }
 
 }

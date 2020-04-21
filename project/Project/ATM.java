@@ -8,4 +8,9 @@ public class ATM extends Location {
         this.operator = op_name;
         this.hours = hours;
     }
+
+    @Override
+    public String toString() {
+        return "ATM (ID="+atm_id+") located at: "+this.address;
+    }
 }

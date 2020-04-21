@@ -20,10 +20,7 @@ public class Location {
 
     @Override
     public String toString() {
-        String key = "Branch located at: "+this.address;
-        if(this instanceof ATM) {
-            key = "ATM located at: "+this.address;
-        }
+        String key = "Branch (ID="+location_id+") located at: "+this.address;
         return key;
     }
 }
