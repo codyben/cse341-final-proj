@@ -1,2 +1,2 @@
-cd Project;
+cd cob322;
 javac *.java;
