@@ -3,8 +3,8 @@ CSE 341, Project
 Cody Benkoski | cob322
 
 How to compile:
-On your terminal, from within the directory where the README is contained run:
-./make_jar.sh
+	On your terminal, from within the directory where the README is contained run:
+		./make_jar.sh
 
 
 General notes:
@@ -15,7 +15,8 @@ General notes:
 	Pretty much every relation that is retrieved by the database, is modeled by an class.
 	Any inserts that are done by the program are not done using Java but are handled exclusively by PL/SQL functions.
 	sunrun.sh is used to mount the Java version on the Sunlab for local testing. This is a modification of script I've used quit a bit at work, in my Capstone project, and additionally in EES research.
-	
+	The lib/ directory contains ojdbc8.jar	
+	plsql_functions/ directory contains the DDL for the functions.
 
 
 
