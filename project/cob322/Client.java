@@ -344,7 +344,7 @@ class Client extends ProjectInterface {
 			} else if(amt > curr_bal-min_balance) {
 				Helper.notify("warn", "You cannot withdraw more than your account balance, including the minimum balance.", true);
 				
-				if(curr_bal >= 10.0) {
+				if(curr_bal - 10.0 >= min_balance) {
 					Helper.notify("error", "Your deposit has been rejected, and a 5$ penalty has been imposed.", true);
 					return -5.0;
 				} else if(min_balance <= curr_bal * 0.1){

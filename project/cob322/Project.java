@@ -41,7 +41,7 @@ class Project{
     private static boolean pick_role() throws UnrecoverableException {
         System.out.println("\n");
         HashMap<Integer, String> use_cases = new HashMap<>();
-            use_cases.put(1, "Bank Management");
+            use_cases.put(1, "Bank Management (NOT IMPLEMENTED)");
             use_cases.put(2, "Client");
             use_cases.put(3, "Quit");
         String choice = Helper.get_choice(use_cases, Helper.notify_str("heading", "Choose a role you would like to assume.", true));

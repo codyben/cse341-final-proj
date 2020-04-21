@@ -2,6 +2,47 @@ CSE 341, Project
 
 Cody Benkoski | cob322
 
+How to compile:
+On your terminal, from within the directory where the README is contained run:
+./make_jar.sh
+
+
+General notes:
+	After a successful auth, all the locations are loaded into the program. Since it is reasonable to think that locations aren't too dynamic, this was done to not make unneeded queries. 
+	Most menu's you will interact with are dynamic, and respond to the current state of the program/customer. For example, a customer with no Checking Accounts will not be able to request a Debit Card.
+	Ctrl-C is handled and the database connection is closed fine. 
+	Some methods, such as the initial grabbing of locations, will throw specially defined UnrecoverableException. This is meant to be handled by a program exit. 
+	Pretty much every relation that is retrieved by the database, is modeled by an class.
+	Any inserts that are done by the program are not done using Java but are handled exclusively by PL/SQL functions.
+	sunrun.sh is used to mount the Java version on the Sunlab for local testing. This is a modification of script I've used quit a bit at work, in my Capstone project, and additionally in EES research.
+	
+
+
+
+
+Interface Descriptions:
+1.] Bank Management: 
+	Due to time constrainsts, this interface is not implemented. Regardless, I left its option in the menu instead of removing it.
+2.] Account Deposit / Withdrawal:
+	The menu here is adaptive based on the state of the Customer's holdings.
+	For example, if a customer does not have any accounts, no deposit/transfer/withdrawal options are given. The option to create an account is always given.
+	As specified, Savings Account cannot go negative. If a withdrawal makes one go negative, the transaction is rejected and a penalty of 5$ or 10% of the balance is imposed, whatever is least.
+	A deposit to an account can only occur at a branch location, if you're at an ATM, the deposit option is removed from the menu options.
+	An account transfer operated similarly to a chained withdrawal-deposit (in fact thats how its implemented). Of note, is that no penalty is imposed for an intra-account transfer that causes a negative balance. The transaction is rejected.
+		This option is not displayed if the user does not have 2 or more accounts. Additionally, account transfers can only be between the same customer's account.
+3.] Payment on loan/credit card:
+	Not currently implemented.
+4.] Opening of a new account:
+	A customer can open as many Checking/Savings accounts as they desire. The interest rate for these accounts can only be in decimal form, otherwise the account creation is rejected.
+5.] Obtaining a new or replacement card:
+	A new card can currently be obtained. A replacement card cannot be requested. 
+	A customer may request as many cards as needed. Multiple debit cards may be attached to a single debit account. 
+6.] Taking out a new loan:
+	Not currently implemented. 
+7.] Purchases using a Card:
+	Currently implemented. No penalties are imposed if the credit limit is exhausted, or the debit account balance is insuficient. To make a purchase, you enter an amount and a merchant name. 
+
+
 Known Bugs:
 
 
@@ -9,6 +50,8 @@ Known Bugs:
 
 
 Good Accounts to use with testing:
+All around account:
+	Ben "The Big Test" Kadosz
 
 
 
