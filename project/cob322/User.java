@@ -44,7 +44,7 @@ class User {
         first_name = f;
         last_name = l;
         dob = d;
-        full_name = first_name +" "+last_name;
+        full_name = first_name +" "+last_name; //do this for a new account so we're not forced to run a query to get this column.
         email = e; 
         address = addy;
         
