@@ -160,27 +160,28 @@ class Client extends ProjectInterface {
 	public boolean intent(final User c) throws UnrecoverableException{
 		boolean cont = true;
 		do {
+			int i = 1; //counter used for promptmap.
 			c.compute();
 			c.format_data();
-			// final String interface1 = "Refresh account details.";
+
+			/* DECLARE ALL PROMPT OPTIONS */
 			final String interface2a = "Account Deposit.";
 			final String interface2b = "Account Withdrawal.";
 			final String interface2c = "Transfer Funds.";
 			final String interface3Alpha = "Loan Payment.";
 			final String interface3Beta = "Credit Card Payment. (TODO)";
 			final String interface4 = "Open a new account.";
-			// final String interface5 = "Obtain a new / replacement credit card";
-			// final String interface6 = "Take out a new loan";
+			final String interface6 = "Take out a new loan";
 			final String interface7Alpha = "Make a purchase with your cards.";
 			final String interface7Beta = "View activity on your cards.";
-			final String interface5a = "Obtain a replacement card. (TODO)";
+			final String interface5a = "Obtain a replacement card.";
 			final String interface5b = "Request a card.";
 			final String interface8 = "View account summary.";
 			final String interface8b = "View card summary.";
 			final String quit = "Return to previous.";
 			final String edit = "View/edit my details.";
+
 			HashMap<Integer, String> paths = new HashMap<>();
-			int i = 1;
 			HashMap<Integer, String> accounts = new HashMap<>();
 			paths.put(i++, edit); //always allow a user to see/edit their details.
 			
@@ -196,6 +197,7 @@ class Client extends ProjectInterface {
 			boolean loan_ops = c.num_credit > 0;
 			boolean card_ops = c.total_cards > 0;
 			boolean trans_ops = c.num_accounts >= 2;
+			
 			if(acc_ops) {
 				accounts = c.get_accounts();
 
@@ -212,11 +214,11 @@ class Client extends ProjectInterface {
 			}  
 			
 			if(cred_ops) {
-				paths.put(i++, interface3Beta);
+				// paths.put(i++, interface3Beta);
 			} 
 			
 			if(loan_ops) {
-				paths.put(i++, interface3Alpha);
+				// paths.put(i++, interface3Alpha);
 			} 
 			
 			if(card_ops) {

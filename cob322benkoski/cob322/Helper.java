@@ -12,7 +12,11 @@ class Helper {
     public static Connection con() {
         return con;
     }
-
+    /**
+     * Computed the GeneralOperations class as a singleton since its quite expensive to instantiate each time.
+     * @return
+     * @throws UnrecoverableException
+     */
     public static final GenOperations compute_general() throws UnrecoverableException {
         /* use a singleton to compute all the branches/locations/atms */
         try {
@@ -123,7 +127,7 @@ class Helper {
             return res;
         } else {
             notify("warn", "Invalid email entered.", true);
-            return get_email(msg);
+            return get_email_allow(msg);
         }
               
     }

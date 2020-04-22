@@ -2,50 +2,150 @@ CSE 341, Project
 
 Cody Benkoski | cob322
 
-How to compile:
-	On your terminal, from within the directory where the README is contained run:
-		./make_jar.sh
+HOW TO COMPILE:
+On your terminal, from within the directory where the README is contained run:
+./make_jar.sh
 
 
-Directory Structure:
-	ddl/: contains the DDL used to create/drop tables.
-	plsql_functions/: contains the code to create/replace the pl/sql functions I used.
-	scripts/: contains the sunrun script to mount the Sunlab Java version locally.
-	cob322/: contains the Java src for the project, and the Manifest file.
-	lib/: contains ojdbc8.jar.
+DIRECTORY STRUCTURE:
+1.] ddl/: contains the DDL used to create/drop tables.
 
-General notes:
-	After a successful auth, all the locations are loaded into the program. Since it is reasonable to think that locations aren't too dynamic, this was done to not make unneeded queries. 
-	Most menu's you will interact with are dynamic, and respond to the current state of the program/customer. For example, a customer with no Checking Accounts will not be able to request a Debit Card.
-	Ctrl-C is handled and the database connection is closed fine. 
-	Some methods, such as the initial grabbing of locations, will throw specially defined UnrecoverableException. This is meant to be handled by a program exit. 
-	Pretty much every relation that is retrieved by the database, is modeled by an class.
-	Any inserts that are done by the program are not done using Java but are handled exclusively by PL/SQL functions.
-	sunrun.sh is used to mount the Java version on the Sunlab for local testing. This is a modification of script I've used quit a bit at work, in my Capstone project, and additionally in EES research.
+2.] plsql_functions/: contains the code to create/replace the pl/sql functions I used.
+
+3.] scripts/: contains the sunrun script to mount the Sunlab Java version locally.
+
+4.] cob322/: contains the Java src for the project, and the Manifest file.
+
+5.] lib/: contains ojdbc8.jar.
+
+GENERAL NOTES:
+After a successful auth, all the locations are loaded into the program. Since it is reasonable to think that locations aren't too dynamic, this was done to not make unneeded queries. 
+Most menu's you will interact with are dynamic, and respond to the current state of the program/customer. For example, a customer with no Checking Accounts will not be able to request a Debit Card.
+Ctrl-C is handled and the database connection is closed fine. 
+Some methods, such as the initial grabbing of locations, will throw a specially defined UnrecoverableException. This is meant to be handled by a program exit. 
+Pretty much every relation that is retrieved by the database, is modeled by a class.
+Any inserts that are done by the program are not done using Java but are handled exclusively by PL/SQL functions.
+sunrun.sh is used to mount the Java version on the Sunlab for local testing. This is a modification of script I've used quit a bit at work, in my Capstone project, and additionally in EES research.
 
 
 
-Interface Descriptions:
+INTERFACE DESCRIPTIONS:
 1.] Bank Management: 
-	Due to time constrainsts, this interface is not implemented. Regardless, I left its option in the menu instead of removing it.
+Due to time constrainsts, this interface is not implemented. Regardless, I left its option in the menu instead of removing it.
+
 2.] Account Deposit / Withdrawal:
-	The menu here is adaptive based on the state of the Customer's holdings.
-	For example, if a customer does not have any accounts, no deposit/transfer/withdrawal options are given. The option to create an account is always given.
-	As specified, Savings Account cannot go negative. If a withdrawal makes one go negative, the transaction is rejected and a penalty of 5$ or 10% of the balance is imposed, whatever is least.
-	A deposit to an account can only occur at a branch location, if you're at an ATM, the deposit option is removed from the menu options.
-	An account transfer operated similarly to a chained withdrawal-deposit (in fact thats how its implemented). Of note, is that no penalty is imposed for an intra-account transfer that causes a negative balance. The transaction is rejected.
-		This option is not displayed if the user does not have 2 or more accounts. Additionally, account transfers can only be between the same customer's account.
+The menu here is adaptive based on the state of the Customer's holdings.
+For example, if a customer does not have any accounts, no deposit/transfer/withdrawal options are given. The option to create an account is always given.
+As specified, Savings Account cannot go negative. If a withdrawal makes one go negative, the transaction is rejected and a penalty of 5$ or 10% of the balance is imposed, whatever is least.
+A deposit to an account can only occur at a branch location, if you're at an ATM, the deposit option is removed from the menu options.
+An account transfer operated similarly to a chained withdrawal-deposit (in fact thats how its implemented). Of note, is that no penalty is imposed for an intra-account transfer that causes a negative balance. The transaction is rejected.
+This option is not displayed if the user does not have 2 or more accounts. Additionally, account transfers can only be between the same customer's account.
+
 3.] Payment on loan/credit card:
-	Not currently implemented.
+Not currently implemented.
+
 4.] Opening of a new account:
-	A customer can open as many Checking/Savings accounts as they desire. The interest rate for these accounts can only be in decimal form, otherwise the account creation is rejected.
+A customer can open as many Checking/Savings accounts as they desire. The interest rate for these accounts can only be in decimal form, otherwise the account creation is rejected.
+
 5.] Obtaining a new or replacement card:
-	A new card can currently be obtained. A replacement card carries the same attached data as the previous card, with the exception that its Card Number, CVC, and PIN (if debit) have been changed.
-	A customer may request as many cards as needed. Multiple debit cards may be attached to a single debit account. 
+A new card can currently be obtained. A replacement card carries the same attached data as the previous card, with the exception that its Card Number, CVC, and PIN (if debit) have been changed.
+A customer may request as many cards as needed. Multiple debit cards may be attached to a single debit account. 
+
 6.] Taking out a new loan:
-	Not currently implemented. 
+Not currently implemented. 
+
 7.] Purchases using a Card:
-	Currently implemented. No penalties are imposed if the credit limit is exhausted, or the debit account balance is insuficient. To make a purchase, you enter an amount and a merchant name. 
+Currently implemented. No penalties are imposed if the credit limit is exhausted, or the debit account balance is insuficient. To make a purchase, you enter an amount and a merchant name. 
+
+
+USAGE INSTRUCTIONS:
+You will first be greeted by a prompt asking you to enter your username and password for edgar1. The password is intentionally hidden.
+Upon an auth failure, you'll be asked if you want to retry. At this point you can choose to quit or try again.
+Upon a success, you can then choose an interface, or select an option to quit. To reiterate, the only interface implemented is the Client/Teller facing interfaces.
+
+
+THE CLIENT INTERFACE:
+
+LOCATION PROMPT:
+Before any action can take place within this interface, the user/teller is forced to choose a location, or select a new interface.
+If the individual chooses an ATM location, these options are restricted:
+1.] Creation of a new customer.
+2.] Creation of a new account.
+3.] Creation of a new card.
+4.] Obtaining a replacement card.
+5.] Depositing into an account.
+
+There are no restrictions if a Branch location is chosen.
+
+CLIENT PROMPT:
+Just like with the location prompt, the user/teller is now forced to select a customer for which they want to perform any actions on.
+User selection persists until the interface is restarted.
+
+SHOW ALL CUSTOMERS:
+This option lists every customer in the database, ordered ascending by their unique customer ID.
+
+SELECT CUSTOMER BY NAME:
+This option allows a wildcard search for a customer in the database, results are ordered ascending by their unique customer ID.
+
+SELECTION SPEEDBUMP:
+After user selection occurs, a "speedbump" prompt is shown to the user to confirm their selection. A yes selection continues with the normal flow, whereas a no selection has the user select a new customer or quit.
+
+
+
+ACTION ITEMS:
+After the speedbump is passed, you can now perform actions on the selected account. These actions are filtered by the above mentioned location criteria.
+From now on, I am assuming the use of the customer with the following: 
+Number of savings accounts: >= 1
+Number of checking accounts: >= 1
+Number of debit cards: >= 1
+Number of credit cards: >= 1
+
+VIEW/EDIT MY DETAILS:
+This menu option first presents the customer with an overview of their personal details (Name, Email, Address, Creation Date).
+After viewing these details, the customer can then choose to either edit their details, or return to the previous prompt.
+
+(assuming the customer wishes to edit their details)
+The customer is now presented with a collection of prompts to change their details. Further detail is below:
+Every prompt can be skipped by pressing enter, this will leave the data as-is.
+
+NEW FIRST NAME & NEW LAST NAME:
+Nothing too special here, we just grab a string via scanner.
+
+NEW EMAIL:
+We grab a string via scanner, then apply very basic validation. (Check if there exists an '@' and a '.').
+If the email fails validation, the user is prompted to enter one that validates, or keep their current one.
+
+NEW ADDRESS:
+Nothing too special here, we just grab a string via scanner. There is no attempt at validating if the address is "valid".
+I decided on the lack of validation since even if I broke it down to something more granular, there's no stopping junk from being entered.
+
+NO CHANGES OCCURR:
+In the case that each edit was skipped, the program does not access the database and returns control back to the ACTION ITEMS.
+
+CHANGES OCCURR:
+If an item is changed, a prompt is displayed which highlights the changed information and presents options for how to proceed.
+
+THESE DETAILS ARE CORRECT:
+On selection of this option, an attempt is made to serialize our user object back into the database. The customer is notified upon success/failure by either green/red messages.
+
+THIS IS INCORRECT:
+The flow begins back at the VIEW/EDIT MY DETAILS prompt.
+
+QUIT:
+The customer is returned to the ACTION ITEMS.
+
+
+REQUEST A CARD:
+
+
+
+
+ 
+
+
+
+
+
 
 
 Known Bugs:
