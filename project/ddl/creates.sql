@@ -8,7 +8,10 @@ create table customer
     creation_date date not null,
     "address" VARCHAR2(500) not null,
     "NAME" VARCHAR2(101 BYTE) GENERATED ALWAYS AS ("FIRST_NAME"||' '||"LAST_NAME") VIRTUAL  NOT NULL, 
-    constraint customer_pk PRIMARY KEY (customer_id)
+    constraint customer_pk PRIMARY KEY (customer_id),
+    constraint check_semi_good_email CHECK(email != ''), 
+    constraint check_semi_good_address CHECK(LENGTH("address") > 5),
+    constraint check_semi_good_names CHECK(first_name != '' and last_name != '') 
 );
 
 CREATE TABLE location
@@ -20,7 +23,8 @@ CREATE TABLE location
 	"STREET" VARCHAR2(50) not null, 
 	"STREET_NUM" NUMBER(10,0) not null, 
 	"ADDRESS" VARCHAR2(300) GENERATED ALWAYS AS (TO_CHAR("STREET_NUM")||' '||"STREET"||', '||"CITY"||' '||"STATE"||' '||TO_CHAR("ZIP")) VIRTUAL , 
-	CONSTRAINT "LOCATION_PK" PRIMARY KEY ("LOCATION_ID")
+	CONSTRAINT "LOCATION_PK" PRIMARY KEY ("LOCATION_ID"),
+    constraint check_semi_good_addys CHECK(city != '' and state != '' and street != '')
 );
 
 create table branch 
@@ -52,14 +56,16 @@ create table account
     balance NUMBER(15, 3) DEFAULT 0 not null,
     interest NUMBER(7,5) not null,
     creation_date date,
-    constraint acc_pk PRIMARY KEY (acct_id)
+    constraint acc_pk PRIMARY KEY (acct_id), 
+    constraint check_acct_balance CHECK(balance >= 0)
 );
 
 create table checking_account 
 (
      acct_id NUMBER(10) not null REFERENCES account(acct_id),
      min_balance NUMBER(15,3) default 5 not null,
-     constraint ck_acct_pk PRIMARY KEY (acct_id)
+     constraint ck_acct_pk PRIMARY KEY (acct_id), 
+     constraint check_min_bal CHECK(min_balance >= 0)
 );
 
 
@@ -68,7 +74,7 @@ create table loan
     loan_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
     interest NUMBER(7,5) not null,
     payment NUMBER(15,3) not null,
-    amount number(15) not null,
+    amount number(15, 3) not null,
     constraint loan_pk PRIMARY KEY (loan_id)
 );
 
@@ -77,7 +83,8 @@ create table collateral
     collateral_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
     "value" NUMBER(15,3) DEFAULT 0 not null,
     "address" VARCHAR2(500) not null,
-    constraint collateral_pk PRIMARY KEY (collateral_id)
+    constraint collateral_pk PRIMARY KEY (collateral_id), 
+    constraint collateral_value CHECK("value" >= 0)
 );
 
 create table secured_loan
@@ -101,7 +108,8 @@ create table purchases
     purchase_name varchar(50) not null,
     purchase_time date,
     purchase_amount number(6) not null,
-    constraint purchases_pk PRIMARY KEY (purchase_id)
+    constraint purchases_pk PRIMARY KEY (purchase_id), 
+    constraint card_purchase_amt_check CHECK(purchase_amount > 0)
 );
 
 create table buys 
@@ -117,7 +125,8 @@ create table credit_card
     interest NUMBER(7,5) not null,
     balance_due AS (running_balance * (1+interest)),
     running_balance NUMBER(7,5) default 0 not null,
-    constraint credit_pk PRIMARY KEY (card_id)
+    constraint credit_pk PRIMARY KEY (card_id),
+    constraint credit_card_pos_interest CHECK(interest >= 0)
 );
 
 create table debit_card
@@ -143,7 +152,8 @@ create table loan_action
     "time" date,
     loan_id REFERENCES loan(loan_id),
     location_id REFERENCES location(location_id),
-    constraint loan_action_pk PRIMARY KEY(payment_id)
+    constraint loan_action_pk PRIMARY KEY(payment_id), 
+    constraint loan_action_pos_amt CHECK(amount > 0)
 );
 
 create table loan_payment 
@@ -156,6 +166,7 @@ create table loan_payment
 create table account_actions 
 (
     action_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
+    -- Amount can be negative here as that's representative of a withdrawal.
     amount NUMBER(15, 3) not null,
     action_time date,
     location_id NUMBER(10) REFERENCES location(location_id),
@@ -191,7 +202,8 @@ create table card_actions
     action_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
     amount NUMBER(15, 3) not null,
     action_time date,
-    constraint card_actions_pk PRIMARY KEY (action_id)
+    constraint card_actions_pk PRIMARY KEY (action_id), 
+    constraint card_actions_pos_amt CHECK(amount > 0)
 );
 
 create table card_performs

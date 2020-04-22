@@ -7,6 +7,13 @@ How to compile:
 		./make_jar.sh
 
 
+Directory Structure:
+	ddl/: contains the DDL used to create/drop tables.
+	plsql_functions/: contains the code to create/replace the pl/sql functions I used.
+	scripts/: contains the sunrun script to mount the Sunlab Java version locally.
+	cob322/: contains the Java src for the project, and the Manifest file.
+	lib/: contains ojdbc8.jar.
+
 General notes:
 	After a successful auth, all the locations are loaded into the program. Since it is reasonable to think that locations aren't too dynamic, this was done to not make unneeded queries. 
 	Most menu's you will interact with are dynamic, and respond to the current state of the program/customer. For example, a customer with no Checking Accounts will not be able to request a Debit Card.
@@ -15,9 +22,6 @@ General notes:
 	Pretty much every relation that is retrieved by the database, is modeled by an class.
 	Any inserts that are done by the program are not done using Java but are handled exclusively by PL/SQL functions.
 	sunrun.sh is used to mount the Java version on the Sunlab for local testing. This is a modification of script I've used quit a bit at work, in my Capstone project, and additionally in EES research.
-	The lib/ directory contains ojdbc8.jar	
-	plsql_functions/ directory contains the DDL for the functions.
-
 
 
 
