@@ -17,4 +17,5 @@ public class Debit extends Card {
     public int get_pin() {
         return Integer.parseInt(this.pin);
     }
+
 }

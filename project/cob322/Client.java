@@ -42,9 +42,9 @@ class Client extends ProjectInterface {
 		HashMap<Integer, String> paths = new HashMap<>();
 		HashMap<String, User> query_result = new HashMap<>();
 		HashMap<Integer, String> get_user = new HashMap<>();
-		String creat_cust = "Create new customer. (TODO)";
+		String creat_cust = "Create new customer.";
 		String cust_id = "Select customer by ID. (TODO)";
-		String cust_name = "Select customer by name. (TODO)";
+		String cust_name = "Select customer by name.";
 		String all = "Show all customers.";
 		String quit = "Restart client interface...";
 		
@@ -52,16 +52,18 @@ class Client extends ProjectInterface {
 			paths.put(pmap++, creat_cust);
 		}
 
-		if(user_count <= 0 && !isAtBranch) {
-			Helper.notify("warn", "Please go to your local branch for assistance. Thank you.", true); //there's no users in DB, so we can't present any options.
-			return null;
-		} else  {
-			// paths.put(pmap++, creat_cust);
-			paths.put(pmap++, cust_id);
+		if(user_count > 0 ) {
 			paths.put(pmap++, cust_name);
 			paths.put(pmap++, all);
-			paths.put(pmap++, quit);
 		}
+
+		if(user_count <= 0 && !isAtBranch) {
+			//
+			Helper.notify("warn", "Please go to your local branch for assistance (i.e there's no users in the DB). Thank you.", true); //there's no users in DB, so we can't present any options.
+			return null;
+		} 
+
+		paths.put(pmap++, quit);
 
 		if(paths.size() == 0) {
 			Helper.notify("warn", "Please go to your local branch for assistance. Thank you.", true); //there's no users in DB, so we can't present any options.
@@ -73,11 +75,19 @@ class Client extends ProjectInterface {
 		if(result.equals(cust_id)) {
 			int cust_search_id = Helper.get_int("Please enter the customer ID.");
 			return customer;
-		} else if(result.equals(cust_name)) {
-			String cust_search_name = Helper.get_string("Please enter the customer name.");
-			return customer;
-		} else if(result.equals(all)) {
-			query_result = ops.list_all_users();
+		} else if(result.equals(all) || result.equals(cust_name)) {
+
+			if(result.equals(cust_name)) {
+				String cust_key = Helper.get_string("Please enter the customer name (partial matching is allowed).");
+				query_result = ops.list_all_users(cust_key);
+				if(query_result.size() == 0) {
+					Helper.notify("warn", "No customers found for search: "+cust_key, true);
+					return null;
+				}
+			} else {
+				query_result = ops.list_all_users();
+			}
+
 			if(query_result == null) {
 				Helper.error_exit();
 			}
@@ -232,10 +242,15 @@ class Client extends ProjectInterface {
 					String acct_key = Helper.get_choice(accounts, Helper.notify_str("heading", "\nPlease choose an account.\n", true));
 					Account acct = c.accounts.get(acct_key);
 					this.display_account_metadata(acct);
-					double action_amt = 0;
+					Double action_amt = 0.0;
 					boolean rejection = false; //use this to modify the control flow below so the user sees the rejection.
 					if(choice.equals(interface2b)) {
 						action_amt = this.prompt_withdrawal(acct.balance, acct.min_balance);
+
+						if(action_amt == null) {
+							break; //handle a user quit request.
+						}
+
 						if(action_amt <= 0) {
 							action_amt *= -1; //do the flip to make it a withdrawal.
 							isOK = true; //short circuit confirmation for a penalty.
@@ -248,6 +263,11 @@ class Client extends ProjectInterface {
 	
 					} else {
 						action_amt = this.prompt_deposit(acct.balance);
+						
+						if(action_amt == null) {
+							break; //handle a user wishing to quit.
+						}
+
 						isOK = Helper.confirm("Is the amount: "+Double.toString(action_amt)+"$ ok?");
 						if(isOK)
 							ops.do_deposit(action_amt, this.loc.location_id, acct.acct_id, c.customer_id);
@@ -280,7 +300,7 @@ class Client extends ProjectInterface {
 				} else if(choice.equals(interface7Alpha)) {
 					String card_choice = Helper.get_choice(c.card_promptmap(), Helper.notify_str("heading", "Please choose a card from your accout below.", true));
 					Card temp_pay = c.user_cards.get(card_choice);
-					boolean purchase_result = temp_pay.prompt_and_confirm_purchase(); //true for a success, false for an error/wishing to exit. Messages handled for success/error.
+					Boolean purchase_result = temp_pay.prompt_and_confirm_purchase(); //true for a success, false for an error/wishing to exit. Messages handled for success/error.
 					if(purchase_result) {
 						c.compute();
 						System.out.println("\n-------------------------------------------------------\n");
@@ -303,14 +323,49 @@ class Client extends ProjectInterface {
 					c.compute();
 					c.card_metadata();
 				} else if(choice.equals(interface5a)) {
-					//obtain a replacement card.
+					boolean redo = false;
+					do {
+						String card_choice = Helper.get_choice(c.card_promptmap(), Helper.notify_str("heading", "Please choose a card from your accout below.", true));
+						Card orig = c.user_cards.get(card_choice);
+						// String old_num = orig.card_number;
+						System.out.println(orig.getClass().getName());
+						String warn_card = Helper.notify_str("warn",orig.toString(), true);
+						HashMap<Integer, String> speedbumpmap = new HashMap<>();
+						String good_select = "This is the correct card. I am aware that my CVC/Card Number/PIN (for Debit Cards) will be changed.";
+						String bad_select = "This card is incorrect and I want to select a new card.";
+						String buhbye = "Cancel.";
+						speedbumpmap.put(1, good_select);
+						speedbumpmap.put(2, bad_select);
+						speedbumpmap.put(3, buhbye);
+
+						String select = Helper.get_choice(speedbumpmap, "Requesting new Card for: "+warn_card);
+
+						if(select.equals(good_select)) {
+							System.out.println("PROCEED");
+							//obtain a replacement card.
+							if(c.request_new_card(orig)) {
+								Helper.notify("green", "++Succesfully requested new Card.", true);
+							}
+							System.out.println("HERE");
+							redo = false;
+						} else if(select.equals(bad_select)) {
+							redo = true;
+						} else {
+							break;
+						}
+
+					}while(redo);
 				} else if(choice.equals(interface5b)) {
+					//request a new card.
 					c.request_card(ops);
 				} else if(choice.equals(interface4)) {
+					//create a new account.
 					c.create_new_account();
 				} else if(choice.equals(edit)) {
+					//edit user details.
 					c.prompt_new_details();
 				} else if(choice.equals(interface2c)) {
+					//intra-account fund transfer.
 					c.fund_transfer(accounts, loc);
 				}
 				break;
@@ -330,16 +385,18 @@ class Client extends ProjectInterface {
 		return null;
 	}
 
-	private double prompt_withdrawal(double curr_bal, double min_balance) {
+	private Double prompt_withdrawal(double curr_bal, double min_balance) {
 		//FIX THIS
 		if(min_balance == -1) {
 			min_balance = 0;
 		}
 		boolean correct = false;
 		do{
-			String msg = Helper.notify_str("heading", "Please enter an amount to withdraw from your account: ", false);
+			String msg = Helper.notify_str("heading", "Please enter an amount to withdraw from your account (0 to return): ", false);
 			double amt = Helper.get_double(msg);
-			if(amt <= 0) {
+			if(amt == 0) {
+				return null;
+			} else if(amt < 0) {
 				Helper.notify("warn", "You cannot enter a negative/zero amount.", true);
 			} else if(amt > curr_bal-min_balance) {
 				Helper.notify("warn", "You cannot withdraw more than your account balance, including the minimum balance.", true);
@@ -353,19 +410,24 @@ class Client extends ProjectInterface {
 				}
 			} else return amt;
 		}while(!correct);
-		return 0;
+		return 0.0;
 	}
 
-	private double prompt_deposit(double curr_bal) {
+	private Double prompt_deposit(double curr_bal) {
 		boolean correct = false;
 		do{
-			String msg = Helper.notify_str("heading", "Please enter an amount to deposit into your account: ", false);
+			String msg = Helper.notify_str("heading", "Please enter an amount to deposit into your account (0 to return): ", false);
 			double amt = Helper.get_double(msg);
-			if(amt <= 0) {
+
+			if(amt == 0) {
+				return null;
+			}
+
+			if(amt < 0) {
 				Helper.notify("warn", "You cannot enter a negative/zero amount.", true);
 			} else return amt;
 		}while(!correct);
-		return 0;
+		return 0.0;
 	}
 
 	private void display_account_metadata(final Account a) {

@@ -189,5 +189,27 @@ COMMIT;
 RETURN(c_id);
 end update_customer;
 
+create or replace function replace_credit_card(card_num IN NUMBER, sec_code in NUMBER, card_i in NUMBER )
+RETURN VARCHAR2
+IS c_id VARCHAR2(40);
+PRAGMA AUTONOMOUS_TRANSACTION;
+BEGIN
+UPDATE CARD SET card_number = card_num,  cvc = sec_code WHERE card_id = card_i RETURNING card_number INTO c_id;
+COMMIT;
+RETURN(c_id);
+end replace_credit_card;
+
+
+create or replace function replace_debit_card(card_num IN NUMBER, sec_code in NUMBER, n_pin in NUMBER, card_i in NUMBER )
+RETURN VARCHAR2
+IS c_id VARCHAR2(40);
+PRAGMA AUTONOMOUS_TRANSACTION;
+BEGIN
+UPDATE CARD SET card_number = card_num,  cvc = sec_code WHERE card_id = card_i RETURNING card_number INTO c_id;
+UPDATE debit_card SET pin = n_pin WHERE card_id = card_i;
+COMMIT;
+RETURN(c_id);
+end replace_debit_card;
+
 
 

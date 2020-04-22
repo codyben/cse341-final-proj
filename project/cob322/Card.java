@@ -1,7 +1,7 @@
 import java.text.DecimalFormat;
 import java.sql.*;
 import java.util.*;
-public class Card {
+public class Card implements Cloneable{
     public String card_id;
     public String cvc;
     public String card_number;
@@ -9,6 +9,7 @@ public class Card {
     public int customer_id;
     private CustomerOperations ops;
     private ArrayList<CardActivity> recs;
+    public String trunc_card_id;
 
     Card(String card_id, String cvc, String card_number, int cust_id) {
         con = Helper.con();
@@ -17,6 +18,12 @@ public class Card {
         this.cvc = cvc;
         this.card_number = card_number;
         this.customer_id = cust_id;
+        this.trunc_card_id = card_number.substring(0, 4) + "************";
+    }
+
+    public Card clone() {
+        Card temp = new Card(card_id, cvc, card_number, customer_id);
+        return temp;
     }
 
     /* Helper methods to handle the coercion from different data types */
@@ -31,9 +38,9 @@ public class Card {
     @Override
     public String toString() {
         if(this instanceof Debit) {
-            return "Debit Card (ID="+card_id+")";
+            return "Debit Card (NUM="+trunc_card_id+")";
         } else {
-            return "Credit Card (ID="+card_id+")"; 
+            return "Credit Card (NUM="+trunc_card_id+")"; 
         }
     }
     public void metadata() {
@@ -58,7 +65,7 @@ public class Card {
     }
 
     final public boolean prompt_and_confirm_purchase() {
-        DecimalFormat df = new DecimalFormat("#.0#");
+        DecimalFormat df = new DecimalFormat("#.00");
         boolean confirm = false;
         int purchase_result = -1;
         double amt = 0;
@@ -66,7 +73,17 @@ public class Card {
         // handle rounding:
         // https://stackoverflow.com/questions/2808535/round-a-double-to-2-decimal-places
         do {
-            amt = Helper.get_double("Please the amount of your purchase: $");
+            do {
+                amt = Helper.get_double("Please the amount of your purchase (0 to quit): $");
+
+                if(amt == 0) {
+                    return false;
+                }
+
+                if(amt < 0) {
+                    Helper.notify("warn", "Please try again. Your purchase cannot be negative or zero.", true);
+                }
+            }while(amt <= 0);
             amt = Double.valueOf(df.format(amt));
             name = Helper.get_string("Please enter the name of your purchase: ");
             confirm = Helper.confirm("Is a purchase at: "+name+" for $"+amt+" ok?");
@@ -111,11 +128,6 @@ public class Card {
         
     }
 
-    public Card compute() {
-        if(this instanceof Debit)  {
-            
-        }
-        return null;
-    }
+
 
 }

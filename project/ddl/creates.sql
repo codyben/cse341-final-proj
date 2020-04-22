@@ -37,8 +37,8 @@ create table branch
 
 create table atm
 (
-    operator_name varchar(50),
-    hours_of_operation varchar(1) not null,
+    operator_name varchar(50) not null,
+    hours_of_operation varchar(4) not null,
     atm_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
     constraint atm_pk PRIMARY KEY (atm_id)
 );
@@ -98,7 +98,7 @@ create table card
 (
     card_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
     cvc NUMBER(3) not null,
-    card_number NUMBER(16) not null,
+    card_number VARCHAR2(16) not null,
     constraint card_pk PRIMARY KEY (card_id)
 );
 
@@ -107,7 +107,7 @@ create table purchases
     purchase_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
     purchase_name varchar(50) not null,
     purchase_time date,
-    purchase_amount number(6) not null,
+    purchase_amount number(15, 3) not null,
     constraint purchases_pk PRIMARY KEY (purchase_id), 
     constraint card_purchase_amt_check CHECK(purchase_amount > 0)
 );
@@ -123,8 +123,9 @@ create table credit_card
 (
     card_id NUMBER(10) REFERENCES card(card_id) not null,
     interest NUMBER(7,5) not null,
-    balance_due AS (running_balance * (1+interest)),
+    balance_due AS (running_balance * (1+interest/100)),
     running_balance NUMBER(7,5) default 0 not null,
+    credit_limit NUMBER(12,3) default 0 not null,
     constraint credit_pk PRIMARY KEY (card_id),
     constraint credit_card_pos_interest CHECK(interest >= 0)
 );
@@ -231,7 +232,7 @@ create table card_payments
 create table account_actions_location
 (
     action_id REFERENCES ACCOUNT_ACTIONS(action_id),
-    location_if REFERENCES location(location_id),
+    location_id REFERENCES location(location_id),
     constraint account_actions_location_pk PRIMARY KEY (action_id)
 );
 

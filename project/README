@@ -40,7 +40,7 @@ Interface Descriptions:
 4.] Opening of a new account:
 	A customer can open as many Checking/Savings accounts as they desire. The interest rate for these accounts can only be in decimal form, otherwise the account creation is rejected.
 5.] Obtaining a new or replacement card:
-	A new card can currently be obtained. A replacement card cannot be requested. 
+	A new card can currently be obtained. A replacement card carries the same attached data as the previous card, with the exception that its Card Number, CVC, and PIN (if debit) have been changed.
 	A customer may request as many cards as needed. Multiple debit cards may be attached to a single debit account. 
 6.] Taking out a new loan:
 	Not currently implemented. 

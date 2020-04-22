@@ -3,6 +3,7 @@ import java.util.*;
 class CustomerOperations extends DatabaseOperations {
 
     private PreparedStatement all_users;
+    private PreparedStatement all_users_partial;
     private PreparedStatement account_details;
     private PreparedStatement num_accounts;
     private PreparedStatement num_checking_acct;
@@ -18,13 +19,14 @@ class CustomerOperations extends DatabaseOperations {
     private PreparedStatement do_card_activity;
     private PreparedStatement create_credit_card;
     private PreparedStatement create_debit_card;
-    private PreparedStatement request_new_card;
     private PreparedStatement deserialize_credit;
     private PreparedStatement deserialize_debit;
     private PreparedStatement create_checking_account;
     private PreparedStatement create_savings_account;
     private PreparedStatement create_new_user;
     private PreparedStatement update_user;
+    private PreparedStatement replace_credit_card;
+    private PreparedStatement replace_debit_card;
 
     CustomerOperations(final Connection c) {
         super(c);
@@ -62,6 +64,36 @@ class CustomerOperations extends DatabaseOperations {
             }
             return m;
         } catch(Exception e) {
+            Helper.notify("error", "An error occurred while selecting all users. Due to the severity, the program will now exit.", true);
+            return null;
+        }
+    }
+
+    public HashMap<String, User> list_all_users(final String name) {
+        /* get all users for use in a promptmap */
+        try {
+            HashMap<String, User> m = new HashMap<>();
+            ResultSet result;
+            all_users_partial = con.prepareStatement("SELECT * FROM customer WHERE UPPER(name) LIKE UPPER(?) ORDER BY customer_id");
+            all_users_partial.setString(1, "%"+name+"%");
+            result = all_users_partial.executeQuery();
+
+            while(result.next()) {
+                String fname = result.getString("first_name");
+                String lname = result.getString("last_name");
+                String full_name = result.getString("name");
+                // String d_name = fname +" "+lname;
+                java.util.Date dob = result.getDate("dob");
+                int c_id = result.getInt("customer_id");
+                String email = result.getString("email");
+                String addy  = result.getString("address");
+                java.util.Date creaDate = result.getDate("creation_date");
+                User temp = new User(c_id, fname, lname, dob, email, full_name, creaDate, addy);
+                m.put(temp.toString(), temp);
+            }
+            return m;
+        } catch(Exception e) {
+            // e.printStackTrace();
             Helper.notify("error", "An error occurred while selecting all users. Due to the severity, the program will now exit.", true);
             return null;
         }
@@ -340,7 +372,7 @@ class CustomerOperations extends DatabaseOperations {
             }
             return accumulator;
         } catch(Exception e) {
-            e.printStackTrace();
+            // e.printStackTrace();
             Helper.notify("warn", "\nUnable to return debit card data.\n", true);
             return null;
         }
@@ -369,7 +401,7 @@ class CustomerOperations extends DatabaseOperations {
             }
             return accumulator;
         } catch(Exception e) {
-            e.printStackTrace();
+            // e.printStackTrace();
             Helper.notify("warn", "\nUnable to return credit card data.\n", true);
             return null;
         }
@@ -405,7 +437,7 @@ class CustomerOperations extends DatabaseOperations {
             Helper.notify("warn", "\nA duplicate card number was encountered. Unlikely, but it did.\n", true);
             return null;
         } catch(Exception e) {
-            e.printStackTrace();
+            // e.printStackTrace();
             Helper.notify("warn", "\nUnable to create a new Credit Card. Please try again.\n", true);
             return null;
         }
@@ -438,7 +470,7 @@ class CustomerOperations extends DatabaseOperations {
             Helper.notify("warn", "\nA duplicate card number was encountered. Unlikely, but it did.\n", true);
             return null;
         } catch(Exception e) {
-            e.printStackTrace();
+            // e.printStackTrace();
             Helper.notify("warn", "\nUnable to create a new Debit Card. Please try again.\n", true);
             return null;
         }
@@ -446,12 +478,48 @@ class CustomerOperations extends DatabaseOperations {
         // return null;
     }
 
-    public Debit replace_debit_card(final User c, final Debit d) {
-        return null;
+    public boolean replace_debit_card(final String cvc, final String num, final String pin, final int card_id) {
+
+        ResultSet result;
+        try {
+            replace_debit_card = con.prepareStatement("SELECT replace_debit_card(?,?,?,?) as d from dual");
+            replace_debit_card.setString(1,num);
+            replace_debit_card.setString(2,cvc);
+            replace_debit_card.setString(3,pin);
+            replace_debit_card.setInt(4,card_id);
+            result = replace_debit_card.executeQuery();
+            result.next();
+            if(!result.getString("d").equals(num)) {
+                throw new Exception();
+            }
+        }catch(Exception e) {
+            Helper.notify("error", "Failed Debit Card replacement. Your original card is unaltered.", true);
+            return false;
+        }
+        return true;
     }
 
-    public Credit replace_credit_card(final User c) {
-        return null;
+    public boolean replace_credit_card(final String cvc, final String num, final int card_id) {
+        ResultSet result;
+        try {
+            // System.out.println("Old: "+num);
+            replace_credit_card = con.prepareStatement("SELECT replace_credit_card(?,?,?) as d from dual");
+            replace_credit_card.setString(1,num);
+            replace_credit_card.setString(2,cvc);
+            replace_credit_card.setInt(3,card_id);
+            result = replace_credit_card.executeQuery();
+            result.next();
+            // System.out.println("New: "+result.getString("d"));
+            // System.out.println("Old: "+num);
+            if(!result.getString("d").equals(num)) {
+                throw new Exception();
+            }
+        }catch(Exception e) {
+            // e.printStackTrace();
+            Helper.notify("error", "Failed Credit Card replacement. Your original card is unaltered.", true);
+            return false;
+        }
+        return true;
     }
 
     public Debit deserialize_debit(final int card_id) {
@@ -510,7 +578,7 @@ class CustomerOperations extends DatabaseOperations {
             Helper.notify("warn", "\nA duplicate card number was encountered. Unlikely, but it did.\n", true);
             return false;
         } catch(Exception e) {
-            e.printStackTrace();
+            // e.printStackTrace();
             Helper.notify("warn", "\nUnable to create a new Credit Card. Please try again.\n", true);
             return false;
         }
@@ -534,7 +602,7 @@ class CustomerOperations extends DatabaseOperations {
             Helper.notify("warn", "\nA duplicate card number was encountered. Unlikely, but it did.\n", true);
             return false;
         } catch(Exception e) {
-            e.printStackTrace();
+            // e.printStackTrace();
             Helper.notify("warn", "\nUnable to create a new Credit Card. Please try again.\n", true);
             return false;
         }
@@ -557,6 +625,7 @@ class CustomerOperations extends DatabaseOperations {
             Helper.notify("error", "Duplicate customer ID detected. Please try again later.", true);
             return null;
         }catch(Exception e) {
+            // e.printStackTrace();
             Helper.notify("warn", "Failed creating a new user account. Please try again.", true);
             return null;
         }
@@ -576,10 +645,11 @@ class CustomerOperations extends DatabaseOperations {
             Helper.notify("error", "Duplicate customer ID detected. Please try again later.", true);
             return null;
         }catch(Exception e) {
-            e.printStackTrace();
+            // e.printStackTrace();
             Helper.notify("warn", "Failed updating an account. Please try again.", true);
             return null;
         }
         return null;
     }
+
 }

@@ -26,9 +26,10 @@ class User {
     public ArrayList<Credit> user_credit;
     public HashMap<String, Card> user_cards;
     public final CustomerOperations ops = new CustomerOperations(Helper.con());
+    private GenOperations genops = null;
     DateFormat dfmt = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss");  
 
-    User(int c, String f, String l, Date d, String e, String n, Date creation_date, String addy) {
+    User(int c, String f, String l, Date d, String e, String n, Date creation_date, String addy) throws UnrecoverableException {
         customer_id = c;
         first_name = f;
         last_name = l;
@@ -37,6 +38,7 @@ class User {
         email = e;
         this.creation_date = creation_date;
         address = addy;
+        genops = Helper.compute_general();
         
     }
 
@@ -81,7 +83,7 @@ class User {
             String new_first = Helper.get_string_allow("Enter new first name (press enter to keep current): ");
             String new_last = Helper.get_string_allow("Enter new last name (press enter to keep current): ");
             String new_email = Helper.get_email_allow("Enter new email (press enter to keep current): ");
-            String new_addy = Helper.get_email_allow("Enter new address (press enter to keep current): ");
+            String new_addy = Helper.get_string_allow("Enter new address (press enter to keep current): ");
 
             boolean fchange = new_first.equals("");
             boolean lchange = new_last.equals("");
@@ -449,11 +451,20 @@ class User {
             if(acc_choice.equals("Return to Previous.")) {
                 return false;
             } 
-            
-            new_interest = Helper.get_double("Enter the interest rate for the account: %");
+            do {
+                new_interest = Helper.get_double("Enter the interest rate for the account: %");
+                if(new_interest <= 0) {
+                    Helper.notify("warn", "Your interest cannot be zero, nor negative.", true);
+                }
+            }while(new_interest <= 0);
 
             if(acc_choice.equals("Checking Account")) {
-                minimum_balance = Helper.get_double("Enter the minimum balance for the account: $");
+                do {
+                    minimum_balance = Helper.get_double("Enter the minimum balance for the account: $");
+                    if(minimum_balance < 0) {
+                        Helper.notify("warn", "Your minimum balance cannot be negative", true);
+                    }
+                }while(minimum_balance < 0);
                 confirm = Helper.confirm("Creating a "+acc_choice+" with interest of "+df.format(new_interest)+"% and minimum balance of "+df.format(minimum_balance)+"$\nIs this ok?");
             } else {
                 confirm = Helper.confirm("Creating a "+acc_choice+" with interest of "+df.format(new_interest)+"%\nIs this ok?");
@@ -520,12 +531,14 @@ class User {
         Helper.notify("heading", "Brief account details for: "+a.toString(), true);
         System.out.println("Balance: $"+df.format(a.balance));
         double min_balance = (a.min_balance < 0) ? 0 : a.min_balance;
-        double amt = Helper.get_double("Amount to transfer: $");
+        double amt = Helper.get_double("Amount to transfer (0 to quit): $");
         if(amt > a.balance - min_balance) {
             Helper.notify("warn", "The entered amount is too large for your balance", true);
             return prompt_transfer_amt(a);
-        } else if(amt <= 0) {
-            Helper.notify("warn", "You cannot enter a negative or zero amount.", true);
+        } else if(amt == 0) {
+            return -1;
+        } else if(amt < 0) {
+            Helper.notify("warn", "You cannot enter a negative amount.", true);
             return prompt_transfer_amt(a);
         } else {
             return amt;
@@ -573,6 +586,9 @@ class User {
             return false;
         } else if(oh_no_what_do_we_do.equals(looks_good)) {
             double send_amt = Double.parseDouble(df.format(this.prompt_transfer_amt(sender)));
+            if(send_amt <= 0) {
+                return false;
+            }
             boolean confirm_transfer = Helper.confirm("Is transfering the amount: $"+send_amt+" ok?");
             if(confirm_transfer) {
                 int loc_id = l.location_id;
@@ -590,6 +606,43 @@ class User {
             return fund_transfer(acctmap, l);
         }
         return false;
+    }
+
+    public boolean request_new_card(final Card orig) {
+
+        // Card temp = orig.clone(); //partially clone the object.
+
+        Debit temp_debit = null;
+        Credit temp_credit = null;
+        String new_pin = genops.compute_pin();
+        String new_cvc = genops.compute_cvc();
+        String new_card_num = genops.compute_card_num();
+        boolean status = false;
+        int card_id = orig.get_card_id();
+       
+        System.out.println(orig.getClass().getName());
+        //ideally I would have liked to implement cloneable and allow for a deep copy of the card so we could pass that around
+        //instead of passing around params willy nilly, but time crunch.
+        if(orig instanceof Debit) {
+            temp_debit = (Debit)orig;
+            status = ops.replace_debit_card(new_cvc, new_card_num, new_pin, card_id);
+            if(status) {
+                temp_debit.pin = new_pin;
+                temp_debit.cvc = new_cvc;
+                temp_credit.card_number = new_card_num;
+            }
+        } else if(orig instanceof Credit) {
+            // System.out.println("here");
+            temp_credit = (Credit)orig;
+            status = ops.replace_credit_card(new_cvc, new_card_num, card_id);
+            if(status) {
+                temp_credit.cvc = new_cvc;
+                temp_credit.card_number = new_card_num;
+            }
+        }
+
+        return status;
+        
     }
 
 }

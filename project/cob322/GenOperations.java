@@ -13,8 +13,9 @@ public class GenOperations extends DatabaseOperations {
     private Random rand;
 
     final private int PIN_LENGTH = 3;
-    final private int CARD_NUM_LENGTH = 15;
+    final private int CARD_NUM_LENGTH = 14;
     final private int CARD_CVC_LENGTH = 3;
+    // final private String LEAD_OFF_CHAR = "1";
 
     GenOperations(final Connection c) throws SQLException {
         super(c);
@@ -29,8 +30,8 @@ public class GenOperations extends DatabaseOperations {
     }
 
     public final String compute_random_num_str(final int length) {
-        String ret = "";
-        for(int i = 0; i < length; i++) {
+        String ret = Integer.toString(this.rand.nextInt(10));
+        for(int i = 1; i < length; i++) {
             ret += Integer.toString(this.rand.nextInt(10));
         }
 
