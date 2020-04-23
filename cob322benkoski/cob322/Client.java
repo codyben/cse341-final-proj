@@ -13,11 +13,20 @@ class Client extends ProjectInterface {
 		super(n,e);
 	}
 
+	/**
+	 * Pass in initialized objects to be used for later work.
+	 * @param o
+	 * @param g
+	 */
 	public void provision(CustomerOperations o, GenOperations g) {
 		ops = o;
 		gops = g;
 	}
 
+	/**
+	 * Modify the current locations actions are taking place in.
+	 * @param l
+	 */
 	public void set_location(Location l) {
 		if(l instanceof Branch)
 			isAtBranch = true;
@@ -46,7 +55,7 @@ class Client extends ProjectInterface {
 		String cust_id = "Select customer by ID. (TODO)";
 		String cust_name = "Select customer by name.";
 		String all = "Show all customers.";
-		String quit = "Restart client interface...";
+		String quit = "Choose new location/quit.";
 		
 		if(isAtBranch) {
 			paths.put(pmap++, creat_cust);
@@ -78,7 +87,7 @@ class Client extends ProjectInterface {
 		} else if(result.equals(all) || result.equals(cust_name)) {
 
 			if(result.equals(cust_name)) {
-				String cust_key = Helper.get_string("Please enter the customer name (partial matching is allowed).");
+				String cust_key = Helper.get_string("Please enter the customer name (partial matching is allowed): ");
 				query_result = ops.list_all_users(cust_key);
 				if(query_result.size() == 0) {
 					Helper.notify("warn", "No customers found for search: "+cust_key, true);
@@ -157,6 +166,12 @@ class Client extends ProjectInterface {
 		return data_container.locations.get(choice_key);
 	}
 
+	/**
+	 * Display a list of action items that can be performed on a customer.
+	 * @param c
+	 * @return
+	 * @throws UnrecoverableException
+	 */
 	public boolean intent(final User c) throws UnrecoverableException{
 		boolean cont = true;
 		do {
@@ -178,7 +193,7 @@ class Client extends ProjectInterface {
 			final String interface5b = "Request a card.";
 			final String interface8 = "View account summary.";
 			final String interface8b = "View card summary.";
-			final String quit = "Return to previous.";
+			final String quit = "Select new user.";
 			final String edit = "View/edit my details.";
 
 			HashMap<Integer, String> paths = new HashMap<>();
@@ -341,7 +356,7 @@ class Client extends ProjectInterface {
 						String card_choice = Helper.get_choice(c.card_promptmap(), Helper.notify_str("heading", "Please choose a card from your accout below.", true));
 						Card orig = c.user_cards.get(card_choice);
 						// String old_num = orig.card_number;
-						System.out.println(orig.getClass().getName());
+						// System.out.println(orig.getClass().getName());
 						String warn_card = Helper.notify_str("warn",orig.toString(), true);
 						HashMap<Integer, String> speedbumpmap = new HashMap<>();
 						String good_select = "This is the correct card. I am aware that my CVC/Card Number/PIN (for Debit Cards) will be changed.";
@@ -362,7 +377,7 @@ class Client extends ProjectInterface {
 							// System.out.println("HERE");
 							redo = false;
 						} else if(select.equals(bad_select)) {
-							redo = true;
+							continue;
 						} else {
 							break;
 						}
@@ -389,15 +404,26 @@ class Client extends ProjectInterface {
 		return true;
 	}
 
-	public Account list_accounts(User customer) {
-		ArrayList<Account> accounts = ops.account_details_for_user(customer);
+	// /**
+	//  * 
+	//  * @param customer
+	//  * @return
+	//  */
+	// public Account list_accounts(User customer) {
+	// 	ArrayList<Account> accounts = ops.account_details_for_user(customer);
 
-		if(accounts.size() == 0) {
-			Helper.notify("warn", customer.full_name+" has no accounts.",true);
-		}
-		return null;
-	}
+	// 	if(accounts.size() == 0) {
+	// 		Helper.notify("warn", customer.full_name+" has no accounts.",true);
+	// 	}
+	// 	return null;
+	// }
 
+	/**
+	 * Prompt the customer with the withdrawal screen and handle validation.
+	 * @param curr_bal
+	 * @param min_balance
+	 * @return
+	 */
 	private Double prompt_withdrawal(double curr_bal, double min_balance) {
 		//FIX THIS
 		if(min_balance == -1) {
@@ -426,6 +452,11 @@ class Client extends ProjectInterface {
 		return 0.0;
 	}
 
+	/**
+	 * Prompt the user for a deposit and handle validation.
+	 * @param curr_bal
+	 * @return
+	 */
 	private Double prompt_deposit(double curr_bal) {
 		boolean correct = false;
 		do{
@@ -443,6 +474,10 @@ class Client extends ProjectInterface {
 		return 0.0;
 	}
 
+	/**
+	 * Display an individual accounts metadata. While this should've been offloaded to account, I left it here to avoid some last minute refactoring.
+	 * @param a
+	 */
 	private void display_account_metadata(final Account a) {
 		DateFormat date_fmt = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss");
 		String cdate = date_fmt.format(a.creation_date);

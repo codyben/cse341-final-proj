@@ -9,6 +9,10 @@ class Helper {
         con = c;
     }
     
+    /**
+     * Return an initialized database connection object.
+     * @return
+     */
     public static Connection con() {
         return con;
     }
@@ -31,6 +35,9 @@ class Helper {
         }
     }
 
+    /**
+     * Destroy the connection and exit.
+     */
     public static void cleanup() {
         /* handle a graceful halt */
         try {
@@ -42,24 +49,38 @@ class Helper {
         }
             
     }
+    /**
+     * Standard exit. No errors occurred.
+     */
     public static void exit() {
         // Helper.cleanup();
         Helper.notify("success", "Goodbye.", true);
         System.exit(0);
     }
 
+    /**
+     * Exit and throw an error back to the shell.
+     */
     public static void error_exit() {
         Helper.notify("error", "Terminated due to unrecoverable error or SIGTERM.", true);
         // Helper.cleanup();
         System.exit(1);
     }
 
+    /**
+     * Catch a sigterm and handle it.
+     */
     public static void sigterm() {
         Helper.notify("warn", "\nPreparing for graceful halt. Cleaning up and closing.", true);
         Helper.cleanup();
         // System.exit(1);
     }
 
+    /**
+     * Get a string from the terminal, and prompt the user with a message.
+     * @param msg
+     * @return
+     */
     public static String get_string(final String msg) {
         Scanner scnr = new Scanner(System.in); 
         System.out.print(msg);
@@ -72,6 +93,9 @@ class Helper {
             return res;    
     }
 
+    /**
+     * Allow a blank string as input, and prompt the user with a message.
+     */
     public static String get_string_allow(final String msg) {
         Scanner scnr = new Scanner(System.in); 
         System.out.print(msg);
@@ -79,6 +103,12 @@ class Helper {
         return res;    
     }
 
+    /**
+     * Get a date from input using the formatting provided validate it.
+     * @param msg
+     * @param fmt
+     * @return
+     */
     public static java.util.Date get_date(final String msg, final String fmt) {
         String date_str = Helper.get_string(msg);
 
@@ -97,6 +127,11 @@ class Helper {
         }
     }
 
+    /**
+     * Get an email from input and perform naive validation.
+     * @param msg
+     * @return
+     */
     public static String get_email(final String msg) {
 
         String res = get_string(msg);
@@ -113,6 +148,11 @@ class Helper {
               
     }
 
+    /**
+     * Allow a blank string to be accepted as an email.
+     * @param msg
+     * @return
+     */
     public static String get_email_allow(final String msg) {
 
         String res = get_string_allow(msg);
@@ -132,6 +172,11 @@ class Helper {
               
     }
 
+    /**
+     * Prompt the user for a password/anything not wanting to be displayed on screen.
+     * @param msg
+     * @return
+     */
     public static String prompt_sensitive(final String msg) {
         Console console = System.console(); 
         String password = new String(console.readPassword(msg));
@@ -139,6 +184,11 @@ class Helper {
         return password;
     }
 
+    /**
+     * Get an int from input.
+     * @param msg
+     * @return
+     */
     public static Integer get_int(final String msg) {
         Scanner scnr = new Scanner(System.in); 
         System.out.println(msg);
@@ -150,6 +200,11 @@ class Helper {
         }  
     }
 
+    /**
+     * Get a double from input, and perform validation.
+     * @param msg
+     * @return
+     */
     public static Double get_double(final String msg) {
         Scanner scnr = new Scanner(System.in); 
         System.out.print(msg);
@@ -160,6 +215,11 @@ class Helper {
             return get_double(msg);
         }  
     }
+
+    /**
+     * Confirm the user's wish to continue.
+     * @return
+     */
     public static boolean confirm() {
         Helper.notify("warn", "\nDo you wish to proceed?\n", true);
         HashMap<Integer, String> use_cases = new HashMap<>();
@@ -173,6 +233,11 @@ class Helper {
 
     }
 
+    /**
+     * Confirm a statement passed as a message.
+     * @param msg
+     * @return
+     */
     public static boolean confirm(final String msg) {
         Helper.notify("warn", "\n"+msg+"\n", true);
         HashMap<Integer, String> use_cases = new HashMap<>();
@@ -186,6 +251,10 @@ class Helper {
 
     }
 
+    /**
+     * Get a numeric choice. Used in promptmap.
+     * @return
+     */
     public static Integer prompt_choice() {
         Scanner scnr = new Scanner(System.in); 
         System.out.print("Enter number of your choice: ");
@@ -196,9 +265,6 @@ class Helper {
 
     }
 
-    private static void append_quit(HashMap<Integer, String> results) {
-
-    }
     /**
      * Provide an easy way to prompt the user with a list of choice.
      * Used extensively throughout project.
@@ -263,6 +329,13 @@ class Helper {
         }
     }
 
+    /**
+     * Return a colored string to the user. 
+     * @param color
+     * @param msg
+     * @param n
+     * @return
+     */
     public static String notify_str(String color, String msg, boolean n) {
         String code = "";
         String reset = "\u001B[0m";
@@ -295,6 +368,12 @@ class Helper {
         return ret;
     }
 
+    /**
+     * Print a colored number to the user.
+     * @param color
+     * @param ms
+     * @param n
+     */
     public static void notify(String color, int ms, boolean n) {
         String msg = Integer.toString(ms);
         String code = "";
@@ -326,6 +405,13 @@ class Helper {
         }
     }
 
+    /**
+     * Return a colored number to the user.
+     * @param color
+     * @param ms
+     * @param n
+     * @return
+     */
     public static String notify_str(String color, int ms, boolean n) {
         String msg = Integer.toString(ms);
         String code = "";
@@ -359,6 +445,13 @@ class Helper {
         return ret;
     }
 
+    /**
+     * Return a colored double to the user.
+     * @param color
+     * @param ms
+     * @param n
+     * @return
+     */
     public static String notify_str(String color, double ms, boolean n) {
         String msg = Double.toString(ms);
         String code = "";

@@ -1,5 +1,5 @@
 --------------------------------------------------------
---  File created - Wednesday-April-22-2020   
+--  File created - Thursday-April-23-2020   
 --------------------------------------------------------
 --------------------------------------------------------
 --  DDL for Function CREATE_CHECKING_ACCOUNT
@@ -102,7 +102,7 @@ end create_savings_account;
 
   CREATE OR REPLACE EDITIONABLE FUNCTION "COB322"."DO_ACCOUNT_ACTION" (amt in NUMBER, loc in NUMBER, a_id in NUMBER, c_id in NUMBER)
 RETURN number
-IS new_bal_ret number(10,4);
+IS new_bal_ret number(17,3);
 PRAGMA AUTONOMOUS_TRANSACTION;
 old_bal NUMBER;
 new_bal NUMBER;
@@ -133,8 +133,9 @@ END do_account_action;
   CREATE OR REPLACE EDITIONABLE FUNCTION "COB322"."MAKE_PURCHASE_CREDIT" (amt in NUMBER, p_name in VARCHAR2, c_id in NUMBER)
 RETURN number
 IS new_purchase_id number(25,0);
-c_lim NUMBER(10,2);
-r_bal NUMBER(10,2);
+-- make these intentionally larger than the needed amount so no weird errors happen.
+c_lim NUMBER(16,2);
+r_bal NUMBER(16,2);
 PRAGMA AUTONOMOUS_TRANSACTION;
 BEGIN
 SELECT credit_limit, running_balance into c_lim, r_bal FROM credit_card WHERE card_id = c_id;
@@ -155,7 +156,7 @@ end make_purchase_credit;
   CREATE OR REPLACE EDITIONABLE FUNCTION "COB322"."MAKE_PURCHASE_DEBIT" (amt in NUMBER, p_name in VARCHAR2, c_id IN NUMBER)
 RETURN number
 IS new_purchase_id number(25,0);
-acct_lim NUMBER(15,2);
+acct_lim NUMBER(16,2);
 ac_id NUMBER;
 PRAGMA AUTONOMOUS_TRANSACTION;
 BEGIN
@@ -179,7 +180,7 @@ end make_purchase_debit;
 
   CREATE OR REPLACE EDITIONABLE FUNCTION "COB322"."NUM_ACCOUNTS" (c_id in NUMBER)
 RETURN number
-IS c number(5,2);
+IS c NUMBER;
 BEGIN
 SELECT count(acct_id) INTO c FROM customer_accounts WHERE customer_id = c_id;
 RETURN(c);
@@ -192,7 +193,7 @@ END num_accounts;
 
   CREATE OR REPLACE EDITIONABLE FUNCTION "COB322"."NUM_CARDS" (c_id in NUMBER)
 RETURN number
-IS c number(5,2);
+IS c NUMBER;
 BEGIN
 SELECT count(customer_id) INTO c FROM customer_cards WHERE customer_id = c_id;
 RETURN(c);
@@ -236,6 +237,19 @@ BEGIN
 SELECT count(customer_id) INTO c FROM customer_cards NATURAL JOIN debit_card WHERE customer_id = c_id;
 RETURN(c);
 END num_debit;
+
+/
+--------------------------------------------------------
+--  DDL for Function NUM_LOANS
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "COB322"."NUM_LOANS" (c_id in NUMBER)
+RETURN number
+IS c NUMBER;
+BEGIN
+SELECT count(customer_id) INTO c FROM loan NATURAL JOIN customer_loans WHERE customer_id = c_id;
+RETURN(c);
+END num_loans;
 
 /
 --------------------------------------------------------

@@ -32,15 +32,10 @@ class CustomerOperations extends DatabaseOperations {
         super(c);
     }
 
-    public HashMap<String, User> get_user_by_id() {
-        return null;
-        //TODO
-    }
-
-    public HashMap<String, User> get_user_by_name() {
-        return null;
-        //TODO
-    }
+    /**
+     * do a selection over every user in the database.
+     * @return
+     */
     public HashMap<String, User> list_all_users() {
         /* get all users for use in a promptmap */
         try {
@@ -69,6 +64,11 @@ class CustomerOperations extends DatabaseOperations {
         }
     }
 
+    /**
+     * Do a lookup using a partial name to find a customer.
+     * @param name
+     * @return
+     */
     public HashMap<String, User> list_all_users(final String name) {
         /* get all users for use in a promptmap */
         try {
@@ -98,7 +98,12 @@ class CustomerOperations extends DatabaseOperations {
             return null;
         }
     }
-
+    
+    /**
+     * List all the accounts for a customer. Returns an Arraylist of Accounts
+     * @param customer
+     * @return
+     */
     public ArrayList<Account> account_details_for_user(final User customer) {
         /* list account metadata */
         try {
@@ -127,6 +132,11 @@ class CustomerOperations extends DatabaseOperations {
         }
     }
 
+    /**
+     * Get the number of accounts of a customer.
+     * @param customer
+     * @return
+     */
     public int num_accounts_for_user(final User customer) {
         /* get the number of accounts held by a user */
         try {
@@ -146,6 +156,11 @@ class CustomerOperations extends DatabaseOperations {
 
     }
 
+    /**
+     * Get the number of checking accounts for a user.
+     * @param customer
+     * @return
+     */
     public int num_checking_accounts(final User customer) {
         /* get the number of checking accounts held by a user */
         try {
@@ -164,7 +179,12 @@ class CustomerOperations extends DatabaseOperations {
         }
 
     }
-
+    
+    /**
+     * Get the number of loans associated with a user. TODO
+     * @param customer
+     * @return
+     */
     public int num_loans_for_user(final User customer) {//TODO
         try {
             ResultSet result;
@@ -180,6 +200,11 @@ class CustomerOperations extends DatabaseOperations {
         }
     }
 
+    /**
+     * Get number of debit cards associated with a customer.
+     * @param customer
+     * @return
+     */
     public int num_debit_for_user(final User customer) {
         /* count user debit cards */
         try {
@@ -196,6 +221,11 @@ class CustomerOperations extends DatabaseOperations {
         }
     }
 
+    /**
+     * Get the number of credit cards associated with a customer.
+     * @param customer
+     * @return
+     */
     public int num_credit_for_user(final User customer) {
         /* get a count of a user's credit cards */
         try {
@@ -212,6 +242,11 @@ class CustomerOperations extends DatabaseOperations {
         }
     }
 
+    /**
+     * Get total number of cards associated with a customer. 
+     * @param customer
+     * @return
+     */
     public int num_cards_for_user(final User customer) {
         /* get total number of cards */
         try {
@@ -352,6 +387,11 @@ class CustomerOperations extends DatabaseOperations {
         }
     }
 
+    /**
+     * Return an arraylist of all the customer's debit cards.
+     * @param c
+     * @return
+     */
     public ArrayList<Debit> user_debit_cards(final User c) {
         //since we did the check previously, assume the user has a debit card.
         ArrayList<Debit> accumulator = new ArrayList<>();
@@ -379,6 +419,12 @@ class CustomerOperations extends DatabaseOperations {
         }
     }
 
+
+    /**
+     * Return an arraylist of the customer's associated credit cards.
+     * @param c
+     * @return
+     */
     public ArrayList<Credit> user_credit_cards(final User c) {
         //since we did the check previously, assume the user has a credit card.
         ArrayList<Credit> accumulator = new ArrayList<>();
@@ -408,6 +454,11 @@ class CustomerOperations extends DatabaseOperations {
         }
     }
 
+    /**
+     * Create a new credit card and perform an inplace modification of the stub card object passed.
+     * @param card
+     * @return
+     */
     public Credit create_credit_card(final Credit card) {
         /* SQL Steps:
          * Insert a new row into CARD
@@ -446,6 +497,11 @@ class CustomerOperations extends DatabaseOperations {
         // return null;
     }
 
+    /**
+     * Create a new credit card and perform an inplace modification of the stub card object passed.
+     * @param card
+     * @return
+     */
     public Debit create_debit_card(final Debit card) {
         /* SQL Steps:
          * Insert a new row into CARD
@@ -479,6 +535,14 @@ class CustomerOperations extends DatabaseOperations {
         // return null;
     }
 
+    /**
+     * Change the cvc, card number, and PIN of a debit card. Does not modify previous transactions.
+     * @param cvc
+     * @param num
+     * @param pin
+     * @param card_id
+     * @return
+     */
     public boolean replace_debit_card(final String cvc, final String num, final String pin, final int card_id) {
 
         ResultSet result;
@@ -500,6 +564,13 @@ class CustomerOperations extends DatabaseOperations {
         return true;
     }
 
+    /**
+     * Change a card's number and cvc. Does not modify any previous purchases.
+     * @param cvc
+     * @param num
+     * @param card_id
+     * @return
+     */
     public boolean replace_credit_card(final String cvc, final String num, final int card_id) {
         ResultSet result;
         try {
@@ -523,10 +594,15 @@ class CustomerOperations extends DatabaseOperations {
         return true;
     }
 
+    /**
+     * Deserialize our Card tuple into a Java Object.
+     * @param card_id
+     * @return
+     */
     public Debit deserialize_debit(final int card_id) {
         try {
             ResultSet result;
-            deserialize_debit = con.prepareStatement("SELECT customer_id, to_char(pin) as p, to_char(cvc) as c, card_number, acct_id FROM DEBIT_CARD NATURAL JOIN CARD NATURAL JOIN CUSTOMER_CARDS WHERE card_id = ?");
+            deserialize_debit = con.prepareStatement("SELECT customer_id, to_char(pin) as p, to_char(cvc) as c, card_number, acct_id FROM DEBIT_CARD NATURAL JOIN CARD NATURAL JOIN CUSTOMER_CARDS NATURAL JOIN CARD_ACCOUNT WHERE card_id = ?");
             deserialize_debit.setInt(1, card_id);
             result = deserialize_debit.executeQuery();
             if(result.next()) {
@@ -539,11 +615,17 @@ class CustomerOperations extends DatabaseOperations {
                 return new Debit(Integer.toString(card_id), cvc, card_num, pin, acct_id, cust_id);
             }
         }catch(Exception e) {
+            // e.printStackTrace();
             return null;
         }
         return null;
     }
 
+    /**
+     * Return a Credit stub object to be used for checking success.
+     * @param card_id
+     * @return
+     */
     public Credit deserialize_credit(final int card_id) {
         try {
             ResultSet result;
@@ -551,15 +633,18 @@ class CustomerOperations extends DatabaseOperations {
             deserialize_credit.setInt(1, card_id);
             result = deserialize_credit.executeQuery();
 
-            if(result.next()) {
-
-            }
+            if(result.next()) return new Credit();
         } catch(Exception e) {
-
+            return null;
         }
         return null;
     }
 
+    /**
+     * Create a checking account by passing in an Account object.
+     * @param a
+     * @return
+     */
     public boolean create_checking_account(final Account a) {
         ResultSet result;
         try {
@@ -585,6 +670,12 @@ class CustomerOperations extends DatabaseOperations {
         }
     }
 
+
+    /**
+     * Create a savings account by passing in an Account object.
+     * @param a
+     * @return
+     */
     public boolean create_savings_account(final Account a) {
         ResultSet result;
         try {
@@ -609,6 +700,11 @@ class CustomerOperations extends DatabaseOperations {
         }
     }
 
+    /**
+     * Create a new customer by passing in a User object.
+     * @param c
+     * @return
+     */
     public User create_new_user(User c) {
         ResultSet result;
         try {
@@ -632,6 +728,11 @@ class CustomerOperations extends DatabaseOperations {
         }
     }
 
+    /**
+     * Perform a customer update, by passing in a modified User object.
+     * @param c
+     * @return
+     */
     public User update_user(User c) {
         ResultSet result;
         try {

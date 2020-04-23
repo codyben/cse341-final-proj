@@ -21,6 +21,13 @@ public class Card implements Cloneable{
         this.trunc_card_id = card_number.substring(0, 4) + "************";
     }
 
+    Card() {
+        //stub constructor for deserialize_credit.
+    }
+
+    /**
+     * Return a clone of the current card. Unusued.
+     */
     public Card clone() {
         Card temp = new Card(card_id, cvc, card_number, customer_id);
         return temp;
@@ -51,7 +58,12 @@ public class Card implements Cloneable{
         System.out.println();
     }
 
-
+    /**
+     * Perform a purchase given an amount and a name.
+     * @param amount
+     * @param name
+     * @return
+     */
     final public int make_purchase(final double amount, final String name) {
         int i_card_id = Integer.parseInt(card_id);
         int result = -1;
@@ -64,6 +76,10 @@ public class Card implements Cloneable{
         return result;
     }
 
+    /**
+     * Handle the input relating to making a purchase. Returns false on quit.
+     * @return
+     */
     final public boolean prompt_and_confirm_purchase() {
         DecimalFormat df = new DecimalFormat("#.00");
         boolean confirm = false;
@@ -107,6 +123,9 @@ public class Card implements Cloneable{
         
     }
 
+    /**
+     * Create an arraylist of Activity objects relating to this card.
+     */
     final public void activity() {
         ArrayList<CardActivity> results = ops.do_activity(Integer.parseInt(card_id));
 

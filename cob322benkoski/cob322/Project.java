@@ -2,6 +2,11 @@ import java.sql.*;
 import java.io.*;
 import java.util.*;
 
+/**
+ * cody benkoski
+ * cob322
+ * CSE 341 Project
+ */
 
 class Project{  
 
@@ -9,6 +14,11 @@ class Project{
     private static String password;
     private final static String host = "edgar1.cse.lehigh.edu";
 
+    /**
+     * Main launch off point for the client interface.
+     * @return
+     * @throws UnrecoverableException
+     */
     private static boolean customer() throws UnrecoverableException{
         Client client = new Client("Client", "After confirmation, select a method to view a user from below.");
         client.launch();
@@ -38,6 +48,11 @@ class Project{
         return true; //return a true to start cycle over again.
     }
 
+    /**
+     * Have the user choose which interface they want to launch into.
+     * @return
+     * @throws UnrecoverableException
+     */
     private static boolean pick_role() throws UnrecoverableException {
         System.out.println("\n");
         HashMap<Integer, String> use_cases = new HashMap<>();
@@ -89,7 +104,7 @@ class Project{
             System.out.println("Metadata load complete.");
 
 
-            Helper.notify("success", "\n\n** Welcome to Nickel Savings Bank **", true);
+            Helper.notify("success", "\n\n** Welcome to Nickel Savings Bank **", true); //welcome message
             boolean status = true;
             do {
                 status = pick_role();

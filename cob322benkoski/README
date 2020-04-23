@@ -67,6 +67,7 @@ Not currently implemented.
 
 7.] Purchases using a Card:
 Currently implemented. No penalties are imposed if the credit limit is exhausted, or the debit account balance is insuficient. To make a purchase, you enter an amount and a merchant name. 
+We assume Debit Card purchases are ran through as credit, and as such, a PIN is not required. 
 
 
 USAGE INSTRUCTIONS:
@@ -76,6 +77,7 @@ Upon a success, you can then choose an interface, or select an option to quit. T
 
 
 The below section level of detail is intentional as it was the document for which I used to test the functions and ensure the flow was solid.
+For brevity, I didn't outline every possible error combination, and sometimes shortened it to "the xyz is rejected/declined".
 
 THE CLIENT INTERFACE FLOW:
 
@@ -149,7 +151,7 @@ QUIT:
 The customer is returned to the ACTION ITEMS.
 
 
-REQUEST A CARD:
+REQUEST A CARD FLOW:
 If the customer has an active checking account, then the option to request a Debit Card will be shown. Otherwise, not.
 A Credit Card can always be requested.
 
@@ -176,11 +178,16 @@ Card creation proceeds. If an error occurrs, red text is shown notifying of the 
 User is returned to ACTION ITEMS.
 
 
+REQUEST A NEW DEBIT CARD FLOW:
 
-OPEN A NEW ACCOUNT:
+ACCOUNT PROMPT:
+user must choose a checking accout they are associated with to be attached to the card.
+
+
+OPEN A NEW ACCOUNT FLOW:
 The user is now presented with options relating to which account they would like to create for the customer.
 
-SAVINGS ACCOUNT:
+SAVINGS ACCOUNT FLOW:
 ENTER THE INTEREST RATE:
 The interest rate here is restricted to be within xx.xxxxx. Any larger values/or negative will either be rejected from the interface, or rejected by the database.
 If -1 is entered, user is returned to ACTION ITEMS
@@ -196,7 +203,7 @@ Savings Account creation proceeds. If an error occurrs, red text is shown notify
 User is returned to ACTION ITEMS.
 
 
-CHECKING ACCOUNT:
+CHECKING ACCOUNT FLOW:
 ENTER THE INTEREST RATE:
 The interest rate here is restricted to be within xx.xxxxx. Any larger values/or negative will either be rejected from the interface, or rejected by the database.
 If -1 is entered, user is returned to ACTION ITEMS
@@ -226,7 +233,7 @@ User is returned to ACTION ITEMS.
 RETURN TO PREVIOUS:
 User is returned to ACTION ITEMS.
 
-ACCOUNT DEPOSIT:
+ACCOUNT DEPOSIT FLOW:
 The user is prompted to select an account for which they wish to withdraw money from. The process is identical for a Checking / Savings Account.
 On selection of an account, information about said account is displayed to make decisions about withdrawals easier.
 
@@ -241,7 +248,7 @@ ON FAILURE:
 The user will be notified.
 
 
-ACCOUNT WITHDRAWAL:
+ACCOUNT WITHDRAWAL FLOW:
 The user is prompted to select an account for which they wish to withdraw money from. The process is identical for a Checking / Savings Account.
 On selection of an account, information about said account is displayed to make decisions about withdrawals easier.
 
@@ -256,18 +263,159 @@ ON FAILURE:
 The user will be notified, and a penalty will be imposed (if possible, see discussion in INTERFACE DESCRIPTIONS)
 
 
-TRANSFER FUNDS:
+TRANSFER FUNDS FLOW:
+
+ACCOUNT PROMPT:
+The user is prompted to select an account that they wish to transfer funds from. This option is not available if the customer has less than two accounts.
+
+ACCOUNT PROMPT2:
+The user is prompted to select an account that they wish to transfer funds to. The sending account is removed from this list.
+
+SPEEDBUMP:
+Force the user to review their choices and make changes/proceed as needed.
+
+ACCOUNTS ARE CORRECT:
+Brief account details are displayed so the individual need not memorize balances.
+
+AMOUNT TO TRANSFER:
+Entering an amount too large for your balance is rejected in both the application and database.
+Negative amounts are not allowed, and are rejected in the application, and within the database.
+If 0 is entered, user is returned to ACTION ITEMS
+
+SPEEDBUMP:
+The user must confirm the amount entered is correct.
+
+YES:
+If successful, green text is shown, along with the amount transferred.
+If unsuccessful, red text is shown, notifying of error.
+
+NO:
+return to TRANSFER FUNDS
+
+ACCOUNTS ARE INCORRECT:
+return to TRANSFER FUNDS
+
+QUIT WITHOUT PROCEEDING:
+return to ACTION ITEMS
 
 
+VIEW ACCOUNT SUMMARY FLOW:
+This call should not fail normally. If in the event it does, red text notifies the user.
+Success is shown by a listing of every account's basic data above the ACTION ITEMS prompt.
+
+Example output:
+Checking Account (ACCT_ID=2)
++Creation date: 2020-09-21 09:09:32
++Add date: 2020-09-21 09:09:32
++Current interest rate:	 13.0%
++Current balance:	 46.87$
++Minimum balance:	 25.00$
+
+Checking Account (ACCT_ID=6)
++Creation date: 2020-42-22 10:42:36
++Add date: 2020-42-22 10:42:36
++Current interest rate:	 73.45678%
++Current balance:	 0.00$
++Minimum balance:	 999999999999.11$
 
 
+VIEW ACTIVITY ON YOUR CARDS FLOW:
+
+CARD PROMPT:
+The user is prompted to select one of their cards from a list.
+Example output:
+1].        Credit Card (NUM=3330************)
+
+Upon success, a list of all purchases on the card are displayed above the ACTION ITEMS. The header is the "purchase time", which is in cyan.
+Upon failure, red failure text is displayed to the user. In this output, I chose to partially obscure the card number with asterisks.
+
+Example:
++Purchase time: 2020-20-21 11:20:19
++Card Number: 33309*********
++Purchase name: numero uno
++Purchase Amount: $43.23
+
+
+MAKE A PURCHASE WITH A CARD FLOW:
+
+CARD PROMPT:
+The user is prompted to select one of their cards from a list.
+
+PURCHASE AMOUNT:
+If 0, user is returned to ACTION ITEMS.
+If < 0, user is prompted for a non-negative number.
+Any amount is accepted in this input, even if it will go above your credit limit. Error checking occurs later.
+
+PURCHASE NAME:
+Any valid, non-blank string is accepted. There is no way to quit from this prompt. A general comfirmation comes afterwards.
+
+SPEEDBUMP:
+
+Example output:
+
+Is a purchase at: Ciruit City for $89.0 ok?
+
+Choose an option below.
+
+1].        Yes.      
+2].        No.  
+
+NO:
+return to MAKE A PURCHASE WITH A CARD
+
+YES:
+Attempts the purchase, and either succeeds, or fails if the credit limit/account balance (for debit card) is exceeded.
+
+FAIL:
+User is notified of the error in yellow/orange "warn" text and is returned to ACTION ITEMS
+
+SUCCEED:
+User is notified of the purchase with green "success" text.
+Additionally, VIEW ACCOUNT SUMMARY is done. In addition to displaying data, this recalculates the user's account data to try and maintain consistency.
+
+
+VIEW CARD SUMMARY FLOW:
+A brief summary of all the customer's card is show. Example output below.
++Card Number: 33309642470968
++Card ID: 3
++Card CVC: 187
+
++Interest: 13.32%
++Balance Due: 149.843036$
++Running Balance: 132.23$
++Credit Limit: 500.0$
+
++Card Number: 34490550579620
++Card ID: 10
++Card CVC: 832
+
++Interest: 11.2%
++Balance Due: 0.0$
++Running Balance: 0.0$
++Credit Limit: 9.9999999991E8$
+
+
+OBTAIN A REPLACEMENT CARD FLOW:
+This provides a way for a user to replace a customer's card.
+
+CARD PROMPT:
+The user is prompted to select one of their cards from a list.
+
+THE CARD IS CORRECT:
+If error, user is notified via red (error) text.
+If success, user is shown: ++Succesfully requested new Card.
+Along with the new details.
+
+THE CARD IS INCORRECT:
+return to ACTION ITEMS.
+
+CANCEL:
+return to ACTION ITEMS.
+
+
+SELECT NEW USER:
+return to CLIENT PROMPT.
  
-
-
-
-
-
-
 
 KNOWN BUGS/PAIN POINTS:
 GENERAL UI/UX BUGS:
@@ -282,6 +430,11 @@ GENERAL UI/UX BUGS:
 **Throughout the project, I never actually had promptmap account for a built-in quit. 
 **I originally planned to make more use of confirm, and a better flow.
 **Unfortunately, as the project progressed, I could not dedicate the time to making a better menu system.
+
+*Replacing a card
+**I ran into an error where backtracking through this menu would alert the user that a card replacement failed, despite it succeeding.
+**Upon doing some more updates, and trying to redo this error, it seems to be resolved. Regardless, I wanted to note it.
+**A symptom of this error is that card replacements will fail intermittently.
 
 CONCURRENCY BUGS:
 *Due to the frequency in which I compute user data between prompts, there can be a case where another process modifying the same user will have inconsistent data in the interface.
@@ -298,6 +451,15 @@ All around account:
 
 Account with lots of Credit Cards, but no Checking Account (test for user not being able to make a debit card from interface)
 	Sammy LaCred
+
+
+REFERENCES:
+Sunrun adaptions: https://confluence.cc.lehigh.edu/display/hpc/Linux+Software 
+Performing inserts from PLSQL: https://stackoverflow.com/questions/8729236/solution-to-cannot-perform-a-dml-operation-inside-a-query
+Catching SIGTERM in Java:  https://www.geeksforgeeks.org/jvm-shutdown-hook-java/
+Decimal formatting:  https://stackoverflow.com/questions/2808535/round-a-double-to-2-decimal-places
+Returning a table-esque datatype from a PLSQL function: https://sqljana.wordpress.com/2017/01/22/oracle-return-select-statement-results-like-sql-server-sps-using-pipelined-functions/
+(above was not used, but included since I referenced it)
 
 
 

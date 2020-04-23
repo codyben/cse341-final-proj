@@ -8,6 +8,9 @@ public class Debit extends Card {
         this.acct_id = acct_id;
     }
 
+    /**
+     * print out the details of the card.
+     */
     public void metadata() {
         super.metadata();
         System.out.println("+PIN: "+pin);

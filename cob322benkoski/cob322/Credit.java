@@ -12,6 +12,14 @@ public class Credit extends Card {
         this.credit_limit = c_lim;
     }
 
+    Credit() {
+        super();
+        //stub constructor for deserialize_credit.
+    }
+
+    /**
+     * Display metadata for a card.
+     */
     public void metadata() {
         super.metadata();
         String due = Double.toString(balance_due);

@@ -29,8 +29,9 @@ class User {
     CustomerOperations sync = new CustomerOperations(Helper.con());
     private GenOperations genops = null;
     DecimalFormat df_interest = new DecimalFormat("##.0####");
+    DecimalFormat df = new DecimalFormat("#.##");
     DateFormat dfmt = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss");
-    private String safe_quit = Helper.notify_str("warn", "\nYou have been returned to the previous screen. No changes have occurred.\n", true);  
+    private final String safe_quit = Helper.notify_str("warn", "\nYou have been returned to the previous screen. No changes have occurred.\n", true);  
 
     User(int c, String f, String l, Date d, String e, String n, Date creation_date, String addy) throws UnrecoverableException {
         customer_id = c;
@@ -60,7 +61,10 @@ class User {
         return full_name + " (ID="+Integer.toString(customer_id)+")";
     }
 
-
+    /**
+     * Allow a user to modify their account details and modify the object in place. Returns a reference to the current object.
+     * @return
+     */
     public User prompt_new_details() {
         HashMap<Integer, String> promptmap = new HashMap<>();
         Helper.notify("heading", "\nMy current details: \n", true);
@@ -88,6 +92,7 @@ class User {
             String new_email = Helper.get_email_allow("Enter new email (press enter to keep current): ");
             String new_addy = Helper.get_string_allow("Enter new address (press enter to keep current): ");
 
+            //test if any changes have happened.
             boolean fchange = new_first.equals("");
             boolean lchange = new_last.equals("");
             boolean echange = new_email.equals("");
@@ -142,9 +147,11 @@ class User {
         }
 
         return this; //return the unchanged object.
-
-
     }
+
+    /**
+     * Sync user data back to the application.
+     */
     public void compute() {
         num_accounts = sync.num_accounts_for_user(this);
         num_checking = sync.num_checking_accounts(this);
@@ -165,13 +172,18 @@ class User {
         user_accounts = sync.account_details_for_user(this);
     }
 
-
+    /**
+     * Print out a welcome message for the user.
+     */
     public void welcome_message() {
         Helper.notify("green", "\t++Welcome "+full_name+"!", true);
 
 
     }
 
+    /**
+     * Display data on screen about the number of acounts/loans/cards a user currently holds.
+     */
     public void format_data() {
         /* GENERALIZE COLUMN PRINTING */
         // String heading = Helper.notify_str("heading",this.toString(), true );
@@ -237,9 +249,12 @@ class User {
         System.out.println(debit);
         System.out.println(card);
     }
-
+    /**
+     * Get a list of all accounts a user has, categorize and store them for future use. Additionally, build a promptmap
+     * @return
+     */
     public final HashMap<Integer, String> get_accounts() {
-        /* Get a list of all accounts a user has, categorize and store them for future use. Additionally, build a promptmap */
+        /*  */
         accounts = new HashMap<>();
         HashMap<Integer, String> ret = new HashMap<>();
         CustomerOperations sync = new CustomerOperations(Helper.con());
@@ -255,12 +270,18 @@ class User {
         return ret;
     }
 
+    /**
+     * Build a heading containing the customer's metadata.
+     */
     public void user_metadata() {
         Helper.notify("heading", "\nUser metadata for: "+this.toString(), true);
         this.format_data();
 
     }
 
+    /**
+     * Display associated metadata for each account of the customer.
+     */
     public void account_metadata() {
 
         for(final Account a : this.user_accounts) {
@@ -279,7 +300,10 @@ class User {
         }
         System.out.println();
     }
-
+    /**
+     * Display and return a user's Account after displaying them a promptmap.
+     * @return
+     */
     public Account prompt_checking() {
         HashMap<Integer, String> promptmap = new HashMap<>();
         int i = 1;
@@ -292,7 +316,10 @@ class User {
         String acc_choice = Helper.get_choice(promptmap, "Choose a Checking Account from below.");
         return accounts.get(acc_choice);
     }
-
+    /**
+     * Build a promptmap for the user's credit cards.
+     * @return
+     */
     public Credit credit_card_prompt() {
         HashMap<Integer, String> promptmap = new HashMap<>();
         int i = 1;
@@ -305,7 +332,10 @@ class User {
     public Debit debit_card_prompt() {
         return null;
     }
-
+    /**
+     * Build a promptmap for a user's card selection.
+     * @return
+     */
     public HashMap<Integer, String> card_promptmap() {
         HashMap<Integer, String> promptmap = new HashMap<>();
         HashMap<String, Card> sync = new HashMap<>();
@@ -342,25 +372,34 @@ class User {
         user_cards = sync;
         return promptmap;
     }
-
+    /**
+     * Print out credit card metadata.
+     */
     public void credit_metadata() {
         Helper.notify("heading", "\nCredit card metadata for "+this.toString()+"\n", true);
         // if(user_credit == null) return;
         for(final Credit c : user_credit) {
             c.metadata();
+            System.out.println("****");
         }
         System.out.println("\n-------------------------------------------------------\n");
     }
-
+    /**
+     * Print out debit card metadata.
+     */
     public void debit_metadata() {
         System.out.println("\n-------------------------------------------------------\n");
         Helper.notify("heading", "\nDebit card metadata for "+this.toString()+"\n", true);
 
         for(final Debit d : user_debit) {
             d.metadata();
+            System.out.println("****");
         }
     }
-
+    /**
+     * Print out all card metadata by submitting work to individual metadata loops.
+     * @throws UnrecoverableException
+     */
     public void card_metadata() throws UnrecoverableException {
         this.compute();
         try {
@@ -368,15 +407,17 @@ class User {
             if(num_credit > 0) this.credit_metadata();
 
         }catch(Exception e) {
-            e.printStackTrace();
+            // e.printStackTrace();
             throw new UnrecoverableException();
         }
     }
 
-    public boolean replace_card() {
-        return false;
-    }
-
+    /**
+     * Card request delegate method.
+     * @param ops
+     * @return
+     * @throws UnrecoverableException
+     */
     public boolean request_card(final CustomerOperations ops) throws UnrecoverableException{
         /* Let the user pick the card they want, then delegate the task. */
         HashMap<Integer, String> promptmap = new HashMap<>();
@@ -406,25 +447,37 @@ class User {
 
 
     }
-
+    /**
+     * Specialized debit card creation method.
+     * @param ops
+     * @param a
+     * @return
+     * @throws UnrecoverableException
+     */
     public boolean create_debit_card(final CustomerOperations ops, final Account a) throws UnrecoverableException{
         final GenOperations gops = Helper.compute_general();
         final String pin = gops.compute_pin();
         final String card_num = gops.compute_card_num();
         final String cvc = gops.compute_cvc();
         Debit new_card = new Debit(null, cvc, card_num,  pin, a.acct_id, customer_id); //create a new "debit card" that we can serialize into the db.
-        ops.create_debit_card(new_card);
+        Card result = ops.create_debit_card(new_card);
+
+        if(result != null) {
+            return true;
+        }
+
         return false;
 
     }
-
+    /**
+     * Specialized credit card creation method.
+     */
     public boolean create_credit_card(final CustomerOperations ops) throws UnrecoverableException {
         final GenOperations gops = Helper.compute_general();
         final String card_num = gops.compute_card_num();
         final String cvc = gops.compute_cvc();
         double interest; 
         double c_lim; 
-        DecimalFormat df = new DecimalFormat("#.0#");
         
         boolean confirm = false;
         String conf_warn = Helper.notify_str("warn", "\nDo you wish to proceed?\n", false);
@@ -452,7 +505,13 @@ class User {
         }while(!confirm);
 
         Credit new_card = new Credit(null, cvc, card_num, interest, null, 0, c_lim, customer_id);
-        ops.create_credit_card(new_card);
+        Card result = ops.create_credit_card(new_card);
+
+        if(result != null) {
+            System.out.println("here");
+            return true;
+        }
+
         return false;
     }
     /**
@@ -470,7 +529,7 @@ class User {
         promptmap.put(2, "Checking Account");
         promptmap.put(3, "Return to Previous.");
         boolean confirm = false;
-        DecimalFormat df = new DecimalFormat("#.00");
+        // DecimalFormat df = new DecimalFormat("#.00");
         double new_interest = 0;
         double minimum_balance = 0;
         String acc_choice = "";
@@ -542,7 +601,7 @@ class User {
 
     }
     /**
-     * BIG BUG NEED TO REDO ACCOUNT TYPES.
+     * Kinda stub methods to delegate account creation to the CustomerOperations class.
      * @param a
      * @return
      */
@@ -571,8 +630,13 @@ class User {
         return this;
     }
 
+    /**
+     * Private helper used to offload the task of verifying input for account transfers.
+     * @param a
+     * @return
+     */
     private double prompt_transfer_amt(final Account a) {
-        DecimalFormat df = new DecimalFormat("#.00");
+        // DecimalFormat df = new DecimalFormat("#.00");
         Helper.notify("heading", "Brief account details for: "+a.toString(), true);
         System.out.println("Balance: $"+df.format(a.balance));
         double min_balance = (a.min_balance < 0) ? 0 : a.min_balance;
@@ -589,9 +653,14 @@ class User {
             return amt;
         }
     }
-
+    /**
+     * Main handler of the account fund transfer logic.
+     * @param acctmap
+     * @param l
+     * @return
+     */
     public boolean fund_transfer(final HashMap<Integer, String> acctmap, final Location l) {
-        DecimalFormat df = new DecimalFormat("#.00");
+        // DecimalFormat df = new DecimalFormat("#.00");
         //do a fund transfer.
         HashMap<Integer, String> promptmap = new HashMap<>();
         HashMap<Integer, String> sans_accounts = new HashMap<>();
@@ -645,6 +714,8 @@ class User {
                         return true;
                     }
                 }
+            } else {
+                return fund_transfer(acctmap, l); //redo the prompting.
             }
             // return false;
         } else if(oh_no_what_do_we_do.equals(all_bad)) {
@@ -652,7 +723,9 @@ class User {
         }
         return false;
     }
-
+    /**
+     * Delegate function for requesting a new card. Pawns off work to more specialized ones.
+     */
     public boolean request_new_card(final Card orig) {
 
         // Card temp = orig.clone(); //partially clone the object.
@@ -665,7 +738,7 @@ class User {
         boolean status = false;
         int card_id = orig.get_card_id();
        
-        System.out.println(orig.getClass().getName());
+        // System.out.println(orig.getClass().getName());
         //ideally I would have liked to implement cloneable and allow for a deep copy of the card so we could pass that around
         //instead of passing around params willy nilly, but time crunch.
         if(orig instanceof Debit) {
@@ -675,6 +748,7 @@ class User {
                 temp_debit.pin = new_pin;
                 temp_debit.cvc = new_cvc;
                 temp_credit.card_number = new_card_num;
+                Helper.notify("green", "\n++New PIN: "+new_pin,true);
             }
         } else if(orig instanceof Credit) {
             // System.out.println("here");
@@ -683,9 +757,13 @@ class User {
             if(status) {
                 temp_credit.cvc = new_cvc;
                 temp_credit.card_number = new_card_num;
+                
             }
         }
-
+        if(status) {
+            Helper.notify("green", "++New CVC: "+new_cvc, true);
+            Helper.notify("green", "++New Card Number: "+new_card_num, true);
+        }
         return status;
         
     }
