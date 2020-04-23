@@ -27,6 +27,17 @@ Pretty much every relation that is retrieved by the database, is modeled by a cl
 Any inserts that are done by the program are not done using Java but are handled exclusively by PL/SQL functions.
 sunrun.sh is used to mount the Java version on the Sunlab for local testing. This is a modification of script I've used quit a bit at work, in my Capstone project, and additionally in EES research.
 
+EXTRA (NON-INTERFACE) WORK:
+VIEW/EDIT MY DETAILS: This wasn't part of an official interface, but it felt like something that should naturally be apart of the client interface. Plus, it was a carryover for me making new accounts to test with.
+VIEW ACCOUNT SUMMARY: This almost felt like a part of the Management interface, but I implemented it for the customer as it allows an easy verification if your actions succeeded. 
+VIEW CARD SUMMARY:    Same as above; implemented as it provides easy verification if a purchase was completed, or a card change succeeded.
+
+Handling quits (ctrl-c and unrecoverable exceptions), assuming Bash: 
+I took special care in making sure a ctrl-c quit successfully closed the database connection, mainly due to the vagaries of my internet.
+Further, I paid special attention to making sure that a non-error quit (such as the user opting to terminate the program via a menu option) returns an appropraite exit code (0)
+Of note here is that in the event the program cannot reach the database, and fails to start, (6) is returned. (130) also propagates through the program into $? too.
+Non-network program handled errors return the general (1) exit code.
+
 
 
 INTERFACE DESCRIPTIONS:
@@ -64,7 +75,9 @@ Upon an auth failure, you'll be asked if you want to retry. At this point you ca
 Upon a success, you can then choose an interface, or select an option to quit. To reiterate, the only interface implemented is the Client/Teller facing interfaces.
 
 
-THE CLIENT INTERFACE:
+The below section level of detail is intentional as it was the document for which I used to test the functions and ensure the flow was solid.
+
+THE CLIENT INTERFACE FLOW:
 
 LOCATION PROMPT:
 Before any action can take place within this interface, the user/teller is forced to choose a location, or select a new interface.
@@ -99,6 +112,7 @@ Number of savings accounts: >= 1
 Number of checking accounts: >= 1
 Number of debit cards: >= 1
 Number of credit cards: >= 1
+*Loans are not modeled as they don't effect the menu options due to the interfaces not implemented, regardless I still due list them on the interface.*
 
 VIEW/EDIT MY DETAILS:
 This menu option first presents the customer with an overview of their personal details (Name, Email, Address, Creation Date).
@@ -136,6 +150,113 @@ The customer is returned to the ACTION ITEMS.
 
 
 REQUEST A CARD:
+If the customer has an active checking account, then the option to request a Debit Card will be shown. Otherwise, not.
+A Credit Card can always be requested.
+
+REQUEST A NEW CREDIT CARD:
+Begins the Credit Card creation flow.
+
+INTEREST RATE:
+The interest rate here is restricted to be within xx.xxxxx. Any larger values/or negative will either be rejected from the interface, or rejected by the database.
+Enter 0 to return to ACTION ITEMS.
+
+CREDIT LIMIT:
+The credit limit can be up to 9 places in the tens place, and 3 to the decimals place. Any larger values/or negative will either be rejected from the interface, or rejected by the database.
+The credit limit is made to be intentionally smaller than the maximum account balance.
+Enter 0 to return to ACTION ITEMS.
+
+SPEEDBUMP:
+The user is now prompted with the details of the card they are about to create.
+
+NO:
+The user is now prompted to re-enter details to create a new card.
+
+YES:
+Card creation proceeds. If an error occurrs, red text is shown notifying of the error, else, green text confirms a succesful card creation.
+User is returned to ACTION ITEMS.
+
+
+
+OPEN A NEW ACCOUNT:
+The user is now presented with options relating to which account they would like to create for the customer.
+
+SAVINGS ACCOUNT:
+ENTER THE INTEREST RATE:
+The interest rate here is restricted to be within xx.xxxxx. Any larger values/or negative will either be rejected from the interface, or rejected by the database.
+If -1 is entered, user is returned to ACTION ITEMS
+
+SPEEDBUMP:
+The user is now prompted with the details of the Savings Account they are about to create.
+
+NO:
+The user is now prompted to re-enter details to create a new Savings Account.
+
+YES:
+Savings Account creation proceeds. If an error occurrs, red text is shown notifying of the error, else, green text confirms a succesful card creation.
+User is returned to ACTION ITEMS.
+
+
+CHECKING ACCOUNT:
+ENTER THE INTEREST RATE:
+The interest rate here is restricted to be within xx.xxxxx. Any larger values/or negative will either be rejected from the interface, or rejected by the database.
+If -1 is entered, user is returned to ACTION ITEMS
+
+ENTER THE MINIMUM BALANCE:
+The credit limit can be up to 12 places in the tens place, and 3 to the decimals place. Any larger values/or negative will either be rejected from the interface, or rejected by the database.
+
+CREATION ERROR:
+The user is notified of an error relating to the creation of an account and is prompted if they would like to retry, or abort.
+
+YES:
+CONTINUES from OPEN NEW ACCOUNT.
+
+NO:
+User is returned to ACTION ITEMS.
+
+SPEEDBUMP:
+The user is now prompted with the details of the Checking Account they are about to create.
+
+NO:
+The user is now prompted to re-enter details to create a new Checking Account.
+
+YES:
+Savings Account creation proceeds. If an error occurrs, red text is shown notifying of the error, else, green text confirms a succesful card creation.
+User is returned to ACTION ITEMS.
+
+RETURN TO PREVIOUS:
+User is returned to ACTION ITEMS.
+
+ACCOUNT DEPOSIT:
+The user is prompted to select an account for which they wish to withdraw money from. The process is identical for a Checking / Savings Account.
+On selection of an account, information about said account is displayed to make decisions about withdrawals easier.
+
+ENTER DEPOSIT AMOUNT:
+The deposit amount can be up to 12 places in the tens place, and 3 to the decimals place. Any larger values/or negative will either be rejected from the interface, or rejected by the database.
+If 0 is entered, user is returned to ACTION ITEMS
+
+ON SUCCESS:
+A green BALANCE CHANGE indicator will be seen at the top of the newly output data.
+
+ON FAILURE:
+The user will be notified.
+
+
+ACCOUNT WITHDRAWAL:
+The user is prompted to select an account for which they wish to withdraw money from. The process is identical for a Checking / Savings Account.
+On selection of an account, information about said account is displayed to make decisions about withdrawals easier.
+
+ENTER WITHDRAWAL AMOUNT:
+The withdrawal amount can be up to 12 places in the tens place, and 3 to the decimals place. Any larger values/or negative will either be rejected from the interface, or rejected by the database.
+If 0 is entered, user is returned to ACTION ITEMS 
+
+ON SUCCESS:
+A red BALANCE CHANGE indicator will be seen at the top of the newly output data.
+
+ON FAILURE:
+The user will be notified, and a penalty will be imposed (if possible, see discussion in INTERFACE DESCRIPTIONS)
+
+
+TRANSFER FUNDS:
 
 
 
@@ -148,15 +269,36 @@ REQUEST A CARD:
 
 
 
-Known Bugs:
+KNOWN BUGS/PAIN POINTS:
+GENERAL UI/UX BUGS:
+*I was able to get a prompt menu to enter an unrecoverable state where no options were deemed correct. Unfortunately, I haven't been able to reproduce this bug since.
+**I assume that the error was caused by somehow passing in an empty promptmap, although I believe I've handled this where needed.
 
+*I'm not 100% satisified with the spacing between alert messages, and how they're displayed far above the current prompt.
+**Ideally, I would have liked to append them directly above the current prompt, but this would have required some reworking that I felt could have
+**introduced more bugs than it was worth.
+
+*Menu UX
+**Throughout the project, I never actually had promptmap account for a built-in quit. 
+**I originally planned to make more use of confirm, and a better flow.
+**Unfortunately, as the project progressed, I could not dedicate the time to making a better menu system.
+
+CONCURRENCY BUGS:
+*Due to the frequency in which I compute user data between prompts, there can be a case where another process modifying the same user will have inconsistent data in the interface.
+**I took a step in remedying this by forcing a recompuation of customer data when a customer accesses a prompt that relates to cards.
+**Ultimately this comes down to a tradeoff I made to make the interfaces more responsive in testing, as my VPN connection was spotty at best. Despite my workaround of using the ssh gateway as a jump host, occasionally the
+**network would terminate leaving my connection hanging, and generally throwing off any extended testing I was doing.
 
 
 
 
 Good Accounts to use with testing:
 All around account:
-	Ben "The Big Test" Kadosz
+	Ben "The Big Test" Kadoj
+
+Account with lots of Credit Cards, but no Checking Account (test for user not being able to make a debit card from interface)
+	Sammy LaCred
+
 
 
 

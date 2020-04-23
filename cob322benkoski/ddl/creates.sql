@@ -54,7 +54,7 @@ create table account
 (
     acct_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
     balance NUMBER(15, 3) DEFAULT 0 not null,
-    interest NUMBER(7,5) not null,
+    interest NUMBER(15,5) not null,
     creation_date date,
     constraint acc_pk PRIMARY KEY (acct_id), 
     constraint check_acct_balance CHECK(balance >= 0)
@@ -72,7 +72,7 @@ create table checking_account
 create table loan
 ( 
     loan_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
-    interest NUMBER(7,5) not null,
+    interest NUMBER(15,5) not null,
     payment NUMBER(15,3) not null,
     amount number(15, 3) not null,
     constraint loan_pk PRIMARY KEY (loan_id)
@@ -124,7 +124,7 @@ create table credit_card
     card_id NUMBER(10) REFERENCES card(card_id) not null,
     interest NUMBER(7,5) not null,
     balance_due AS (running_balance * (1+interest/100)),
-    running_balance NUMBER(7,5) default 0 not null,
+    running_balance NUMBER(12,3) default 0 not null,
     credit_limit NUMBER(12,3) default 0 not null,
     constraint credit_pk PRIMARY KEY (card_id),
     constraint credit_card_pos_interest CHECK(interest >= 0)
@@ -245,7 +245,8 @@ CREATE TABLE customer_loans
 
 CREATE TABLE loan_collateral
 (
-    loan_id NUMBER(10) not null REFERENCES secured_loan(loan_id),
     collateral_id NUMBER(10) not null REFERENCES collateral(collateral_id),
+    value NUMBER(15,3) not null,
+    address VARCHAR(500) not null,
     constraint loan_collateral_pk PRIMARY KEY (loan_id, collateral_id)
 );

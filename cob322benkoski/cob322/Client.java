@@ -168,10 +168,10 @@ class Client extends ProjectInterface {
 			final String interface2a = "Account Deposit.";
 			final String interface2b = "Account Withdrawal.";
 			final String interface2c = "Transfer Funds.";
-			final String interface3Alpha = "Loan Payment.";
-			final String interface3Beta = "Credit Card Payment. (TODO)";
+			final String interface3Alpha = "Loan Payment."; //not implemented.
+			final String interface3Beta = "Credit Card Payment. (TODO)"; //not implemented.
 			final String interface4 = "Open a new account.";
-			final String interface6 = "Take out a new loan";
+			final String interface6 = "Take out a new loan"; //not implemented.
 			final String interface7Alpha = "Make a purchase with your cards.";
 			final String interface7Beta = "View activity on your cards.";
 			final String interface5a = "Obtain a replacement card.";
@@ -225,7 +225,9 @@ class Client extends ProjectInterface {
 				paths.put(i++, interface7Beta);
 				paths.put(i++, interface7Alpha);
 				paths.put(i++, interface8b);
-				paths.put(i++, interface5a);
+				if(isAtBranch) {
+					paths.put(i++, interface5a);
+				}
 			}  
 			
 			if (!acc_ops && !card_ops && !cred_ops && !loan_ops){
@@ -260,8 +262,13 @@ class Client extends ProjectInterface {
 						} else {
 							isOK = Helper.confirm("Is the amount: "+Double.toString(action_amt)+"$ ok?");
 						}
-						if(isOK)
-							ops.do_withdrawal(action_amt, this.loc.location_id, acct.acct_id, c.customer_id);
+						if(isOK){
+							boolean good_op = ops.do_withdrawal(action_amt, this.loc.location_id, acct.acct_id, c.customer_id);
+							if(!good_op) {
+								Helper.notify("error", "\n--Withdrawal failed.\n", true);
+							}
+
+						}
 	
 					} else {
 						action_amt = this.prompt_deposit(acct.balance);
@@ -271,8 +278,12 @@ class Client extends ProjectInterface {
 						}
 
 						isOK = Helper.confirm("Is the amount: "+Double.toString(action_amt)+"$ ok?");
-						if(isOK)
-							ops.do_deposit(action_amt, this.loc.location_id, acct.acct_id, c.customer_id);
+						if(isOK) {
+							boolean good_op = ops.do_deposit(action_amt, this.loc.location_id, acct.acct_id, c.customer_id);
+							if(!good_op) {
+								Helper.notify("error", "\n--Deposit failed.\n", true);
+							}
+						}
 					}
 					if(!rejection) {
 						c.get_accounts();
@@ -285,13 +296,13 @@ class Client extends ProjectInterface {
 						// https://stackoverflow.com/questions/2808535/round-a-double-to-2-decimal-places
 						delta = Double.valueOf(df.format(delta));
 						this.display_account_metadata(new_acc);
-						String succ_str = Helper.notify_str("green", "\nDeposit Successful!\n", true);
-						if(delta <= 0) {
+						String succ_str = Helper.notify_str("green", "\n++Deposit Successful!\n", true);
+						if(delta < 0) {
 							System.out.println("Balance change: "+Helper.notify_str("yellow",delta,false)+"$");
-							succ_str = Helper.notify_str("green", "\nWithdrawal Successful!\n", true);
-						} else {
+							succ_str = Helper.notify_str("green", "\n++Withdrawal Successful!\n", true);
+						} else if(delta > 0) {
 							System.out.println("Balance change: +"+Helper.notify_str("green",delta,false)+"$");
-						}
+						} 
 						System.out.println("\n-------------------------------------------------------\n"+succ_str);
 					}
 
@@ -343,12 +354,12 @@ class Client extends ProjectInterface {
 						String select = Helper.get_choice(speedbumpmap, "Requesting new Card for: "+warn_card);
 
 						if(select.equals(good_select)) {
-							System.out.println("PROCEED");
+							// System.out.println("PROCEED");
 							//obtain a replacement card.
 							if(c.request_new_card(orig)) {
 								Helper.notify("green", "++Succesfully requested new Card.", true);
 							}
-							System.out.println("HERE");
+							// System.out.println("HERE");
 							redo = false;
 						} else if(select.equals(bad_select)) {
 							redo = true;

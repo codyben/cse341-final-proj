@@ -246,6 +246,7 @@ class CustomerOperations extends DatabaseOperations {
             result.next();
             if(result.getInt("r") < 0 ) return 0; else return 1; 
         } catch(Exception e) {
+            e.printStackTrace();
             Helper.notify("warn", "\nUnable to perform a credit card purchase.\n", true);
             return -1;
         }
@@ -434,7 +435,7 @@ class CustomerOperations extends DatabaseOperations {
             Helper.notify("warn", "\nAn error occurred while using your provided inputs. Please try something else.\n", true);
             return null;
         } catch(SQLIntegrityConstraintViolationException integrity) {
-            Helper.notify("warn", "\nA duplicate card number was encountered. Unlikely, but it did.\n", true);
+            Helper.notify("warn", "\nYour entered amounts are incorrect. Please try new values.\n", true);
             return null;
         } catch(Exception e) {
             // e.printStackTrace();
@@ -467,7 +468,7 @@ class CustomerOperations extends DatabaseOperations {
             int card_id = result.getInt("d");
             return deserialize_debit(card_id);
         } catch(SQLIntegrityConstraintViolationException integrity) {
-            Helper.notify("warn", "\nA duplicate card number was encountered. Unlikely, but it did.\n", true);
+            Helper.notify("warn", "\nYour entered amounts are incorrect. Please try new values.\n", true);
             return null;
         } catch(Exception e) {
             // e.printStackTrace();

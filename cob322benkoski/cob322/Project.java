@@ -121,7 +121,7 @@ class Project{
                     
             } else if(msg.contains("IO Error")) {
                 Helper.notify("error", "Failed to reach host. The program will now exit.", true);
-                System.exit(1);
+                System.exit(6);
             }
         }
     }

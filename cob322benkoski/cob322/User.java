@@ -26,8 +26,11 @@ class User {
     public ArrayList<Credit> user_credit;
     public HashMap<String, Card> user_cards;
     public final CustomerOperations ops = new CustomerOperations(Helper.con());
+    CustomerOperations sync = new CustomerOperations(Helper.con());
     private GenOperations genops = null;
-    DateFormat dfmt = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss");  
+    DecimalFormat df_interest = new DecimalFormat("##.0####");
+    DateFormat dfmt = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss");
+    private String safe_quit = Helper.notify_str("warn", "\nYou have been returned to the previous screen. No changes have occurred.\n", true);  
 
     User(int c, String f, String l, Date d, String e, String n, Date creation_date, String addy) throws UnrecoverableException {
         customer_id = c;
@@ -143,7 +146,6 @@ class User {
 
     }
     public void compute() {
-        CustomerOperations sync = new CustomerOperations(Helper.con());
         num_accounts = sync.num_accounts_for_user(this);
         num_checking = sync.num_checking_accounts(this);
         num_savings = num_accounts - num_checking;
@@ -307,6 +309,18 @@ class User {
     public HashMap<Integer, String> card_promptmap() {
         HashMap<Integer, String> promptmap = new HashMap<>();
         HashMap<String, Card> sync = new HashMap<>();
+
+        //make sure we recompute so if a customer requests a new card, we can try and grab the current one here.
+        //since the request (replacement) only changes the auxiliary details of the card, the transaction will still succeed here.
+        //although the card number displayed will be outdated.
+
+        if(this.num_credit > 0 ) {
+            user_credit = this.sync.user_credit_cards(this);
+        } 
+        if(this.num_debit > 0) {
+            System.out.println();
+            user_debit = this.sync.user_debit_cards(this);
+        } 
         
         int i = 1;
         
@@ -385,6 +399,8 @@ class User {
             result = this.create_debit_card(ops, a);
         }
 
+        if(result) Helper.notify("green", "++Successfully created new Card.", true);
+
         return result;
 
 
@@ -414,9 +430,23 @@ class User {
         String conf_warn = Helper.notify_str("warn", "\nDo you wish to proceed?\n", false);
         // handle rounding:
         do {
-            interest = Helper.get_double("Please enter the interest rate: %");
-            c_lim = Helper.get_double("Please enter the credit limit: $");
-            interest = Double.valueOf(df.format(interest));
+            interest = Helper.get_double("Please enter the interest rate (0 to cancel): %");
+            if(interest == 0) {
+                System.out.println(safe_quit);
+                return false;
+            }
+            c_lim = Helper.get_double("Please enter the credit limit (0 to cancel): $");
+            if(c_lim == 0) {
+                System.out.println(safe_quit);
+                return false;
+            }
+
+            if(interest < 0 || c_lim < 0) {
+                Helper.notify("warn", "You cannot enter negative numbers. Please try again.", true);
+                continue;
+            }
+
+            interest = Double.valueOf(df_interest.format(interest));
             c_lim = Double.valueOf(df.format(c_lim));
             confirm = Helper.confirm("Creating card with details:\nInterest Rate: "+interest+"%\nCredit Limit: $"+c_lim+conf_warn);
         }while(!confirm);
@@ -452,7 +482,13 @@ class User {
                 return false;
             } 
             do {
-                new_interest = Helper.get_double("Enter the interest rate for the account: %");
+                new_interest = Helper.get_double("Enter the interest rate for the account (-1 to cancel): %");
+
+                if(new_interest == -1.0) {
+                    System.out.print(safe_quit);
+                    return false;
+                }
+
                 if(new_interest <= 0) {
                     Helper.notify("warn", "Your interest cannot be zero, nor negative.", true);
                 }
@@ -460,20 +496,29 @@ class User {
 
             if(acc_choice.equals("Checking Account")) {
                 do {
-                    minimum_balance = Helper.get_double("Enter the minimum balance for the account: $");
+                    minimum_balance = Helper.get_double("Enter the minimum balance for the account (-1 to cancel): $");
+
+
+                if(minimum_balance == -1.0) {
+                    System.out.print(safe_quit);
+                    return false;
+                }
+
                     if(minimum_balance < 0) {
                         Helper.notify("warn", "Your minimum balance cannot be negative", true);
                     }
                 }while(minimum_balance < 0);
-                confirm = Helper.confirm("Creating a "+acc_choice+" with interest of "+df.format(new_interest)+"% and minimum balance of "+df.format(minimum_balance)+"$\nIs this ok?");
+                confirm = Helper.confirm("Creating a "+acc_choice+" with interest of "+df_interest.format(new_interest)+"% and minimum balance of "+df.format(minimum_balance)+"$\nIs this ok?");
             } else {
-                confirm = Helper.confirm("Creating a "+acc_choice+" with interest of "+df.format(new_interest)+"%\nIs this ok?");
+                confirm = Helper.confirm("Creating a "+acc_choice+" with interest of "+df_interest.format(new_interest)+"%\nIs this ok?");
             }
             
         }while(!confirm);
         
         boolean status = false;
-        
+
+        new_interest = Double.valueOf(df_interest.format(new_interest));
+
         if(acc_choice.equals("Savings Account")) {
             Account new_account = new Account(0, new_interest, null, null);
             new_account.customer_id = customer_id;

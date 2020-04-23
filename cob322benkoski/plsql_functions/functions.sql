@@ -1,4 +1,11 @@
-create or replace function create_checking_account(bal in NUMBER, intr in NUMBER, mb in NUMBER, c_id IN NUMBER)
+--------------------------------------------------------
+--  File created - Wednesday-April-22-2020   
+--------------------------------------------------------
+--------------------------------------------------------
+--  DDL for Function CREATE_CHECKING_ACCOUNT
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "COB322"."CREATE_CHECKING_ACCOUNT" (bal in NUMBER, intr in NUMBER, mb in NUMBER, c_id IN NUMBER)
 RETURN number 
 IS new_acct_id NUMBER(25,0);
 c_date DATE;
@@ -13,8 +20,12 @@ COMMIT;
 RETURN(new_acct_id);
 end create_checking_account;
 
+/
+--------------------------------------------------------
+--  DDL for Function CREATE_CREDIT_CARD
+--------------------------------------------------------
 
-create or replace function create_credit_card(card_num IN VARCHAR2, sec_code in NUMBER, interest IN NUMBER, r_bal in NUMBER, c_lim IN NUMBER, cust_od IN NUMBER)
+  CREATE OR REPLACE EDITIONABLE FUNCTION "COB322"."CREATE_CREDIT_CARD" (card_num IN VARCHAR2, sec_code in NUMBER, interest IN NUMBER, r_bal in NUMBER, c_lim IN NUMBER, cust_od IN NUMBER)
 RETURN number
 IS c_id NUMBER(25,0);
 PRAGMA AUTONOMOUS_TRANSACTION;
@@ -27,7 +38,12 @@ COMMIT;
 RETURN(c_id);
 end create_credit_card;
 
-create or replace function create_debit_card(card_num IN VARCHAR2, sec_code in NUMBER, p_code in NUMBER, ac_id IN NUMBER, cust_od IN NUMBER)
+/
+--------------------------------------------------------
+--  DDL for Function CREATE_DEBIT_CARD
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "COB322"."CREATE_DEBIT_CARD" (card_num IN VARCHAR2, sec_code in NUMBER, p_code in NUMBER, ac_id IN NUMBER, cust_od IN NUMBER)
 RETURN number
 IS c_id NUMBER(25,0);
 c_date DATE;
@@ -44,20 +60,29 @@ COMMIT;
 RETURN(c_id);
 end create_debit_card;
 
-create or replace function create_new_customer(fname in VARCHAR2, lname in VARCHAR2, d in Date, e in VARCHAR2, a in VARCHAR2)
+/
+--------------------------------------------------------
+--  DDL for Function CREATE_NEW_CUSTOMER
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "COB322"."CREATE_NEW_CUSTOMER" (fname in VARCHAR2, lname in VARCHAR2, d in Date, e in VARCHAR2, a in VARCHAR2)
 RETURN number 
 IS new_user_id NUMBER(25,0);
 c_date DATE;
 PRAGMA AUTONOMOUS_TRANSACTION;
 BEGIN
 SELECT SYSTIMESTAMP into c_date FROM dual; 
-INSERT INTO customer(first_name, last_name, creation_date, email, DOB, address) VALUES(fname,lname, c_date, e, d, a) RETURNING customer_id INTO new_user_id;
+INSERT INTO customer(first_name, last_name, creation_date, email, DOB, "address") VALUES(fname,lname, c_date, e, d, a) RETURNING customer_id INTO new_user_id;
 COMMIT;
 RETURN(new_user_id);
 end create_new_customer;
 
+/
+--------------------------------------------------------
+--  DDL for Function CREATE_SAVINGS_ACCOUNT
+--------------------------------------------------------
 
-create or replace function create_savings_account(bal in NUMBER, intr in NUMBER, c_id IN NUMBER)
+  CREATE OR REPLACE EDITIONABLE FUNCTION "COB322"."CREATE_SAVINGS_ACCOUNT" (bal in NUMBER, intr in NUMBER, c_id IN NUMBER)
 RETURN number IS new_acct_id NUMBER(25,0);
 c_date DATE;
 PRAGMA AUTONOMOUS_TRANSACTION;
@@ -70,8 +95,12 @@ COMMIT;
 RETURN(new_acct_id);
 end create_savings_account;
 
+/
+--------------------------------------------------------
+--  DDL for Function DO_ACCOUNT_ACTION
+--------------------------------------------------------
 
-create or replace function do_account_action(amt in NUMBER, location in NUMBER, a_id in NUMBER, c_id in NUMBER)
+  CREATE OR REPLACE EDITIONABLE FUNCTION "COB322"."DO_ACCOUNT_ACTION" (amt in NUMBER, loc in NUMBER, a_id in NUMBER, c_id in NUMBER)
 RETURN number
 IS new_bal_ret number(10,4);
 PRAGMA AUTONOMOUS_TRANSACTION;
@@ -82,7 +111,8 @@ ac_id NUMBER;
 BEGIN
 SELeCT nvl(min_balance, 0) INTO min_bal FROM account NATURal LEFT JOIN checking_account WHERE acct_id = a_id;
 SELECT balance into old_bal FROM account where acct_id = a_id;
-INSERT INTO account_actions(amount, action_time, location_id) VALUES(amt, (SELECT TO_CHAR(CURRENT_DATE, 'DD-MON-YYYY') FROM dual),location) RETURNING action_id into ac_id;
+INSERT INTO account_actions(amount, action_time) VALUES(amt, (SELECT TO_CHAR(CURRENT_DATE, 'DD-MON-YYYY') FROM dual)) RETURNING action_id into ac_id;
+INSERT INTO account_actions_location(action_id, location_id) VALUES(ac_id, loc);
 commit;
 --UPDATE account SET balance = balance + amount WHERE acct_id = a_id;
 IF old_bal + amt < min_bal THEN 
@@ -95,8 +125,12 @@ commit;
 RETURN(new_bal);
 END do_account_action;
 
+/
+--------------------------------------------------------
+--  DDL for Function MAKE_PURCHASE_CREDIT
+--------------------------------------------------------
 
-create or replace function make_purchase_credit(amt in NUMBER, p_name in VARCHAR2, c_id in NUMBER)
+  CREATE OR REPLACE EDITIONABLE FUNCTION "COB322"."MAKE_PURCHASE_CREDIT" (amt in NUMBER, p_name in VARCHAR2, c_id in NUMBER)
 RETURN number
 IS new_purchase_id number(25,0);
 c_lim NUMBER(10,2);
@@ -107,14 +141,18 @@ SELECT credit_limit, running_balance into c_lim, r_bal FROM credit_card WHERE ca
 -- error out if insufficient funds
 IF r_bal + amt > c_lim THEN RETURN(-1); END IF;
 UPDATE CREDIT_CARD SET RUNNING_BALANCE = r_bal + amt WHERE card_id = c_id;
-INSERT INTO purchases(purchase_name, purchase_amount) VALUES(p_name, amt) RETURNING purchase_id INTO new_purchase_id;
+INSERT INTO purchases(purchase_name, purchase_amount, purchase_time) VALUES(p_name, amt, (SELECT SYSDATE from dual)) RETURNING purchase_id INTO new_purchase_id;
 INSERT INTO BUYS(purchase_id, card_id) VALUES(new_purchase_id, c_id);
 COMMIT;
 RETURN(new_purchase_id);
 end make_purchase_credit;
 
+/
+--------------------------------------------------------
+--  DDL for Function MAKE_PURCHASE_DEBIT
+--------------------------------------------------------
 
-create or replace function make_purchase_debit(amt in NUMBER, p_name in VARCHAR2, c_id IN NUMBER)
+  CREATE OR REPLACE EDITIONABLE FUNCTION "COB322"."MAKE_PURCHASE_DEBIT" (amt in NUMBER, p_name in VARCHAR2, c_id IN NUMBER)
 RETURN number
 IS new_purchase_id number(25,0);
 acct_lim NUMBER(15,2);
@@ -134,7 +172,12 @@ COMMIT;
 RETURN(new_purchase_id);
 end make_purchase_debit;
 
-create or replace function num_accounts (c_id in NUMBER)
+/
+--------------------------------------------------------
+--  DDL for Function NUM_ACCOUNTS
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "COB322"."NUM_ACCOUNTS" (c_id in NUMBER)
 RETURN number
 IS c number(5,2);
 BEGIN
@@ -142,7 +185,12 @@ SELECT count(acct_id) INTO c FROM customer_accounts WHERE customer_id = c_id;
 RETURN(c);
 END num_accounts;
 
-create or replace function num_cards (c_id in NUMBER)
+/
+--------------------------------------------------------
+--  DDL for Function NUM_CARDS
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "COB322"."NUM_CARDS" (c_id in NUMBER)
 RETURN number
 IS c number(5,2);
 BEGIN
@@ -150,8 +198,12 @@ SELECT count(customer_id) INTO c FROM customer_cards WHERE customer_id = c_id;
 RETURN(c);
 END num_cards;
 
+/
+--------------------------------------------------------
+--  DDL for Function NUM_CHECKING_ACCOUNTS
+--------------------------------------------------------
 
-create or replace function num_checking_accounts(c_id IN NUMBER)
+  CREATE OR REPLACE EDITIONABLE FUNCTION "COB322"."NUM_CHECKING_ACCOUNTS" (c_id IN NUMBER)
 RETURN number
 IS num_chck NUMBER(25);
 BEGIN
@@ -159,8 +211,12 @@ SELECT count(*) into num_chck FROM customer_accounts NATURAL JOIN checking_accou
 RETURN(num_chck);
 end num_checking_accounts;
 
+/
+--------------------------------------------------------
+--  DDL for Function NUM_CREDIT
+--------------------------------------------------------
 
-create or replace function num_credit (c_id in NUMBER)
+  CREATE OR REPLACE EDITIONABLE FUNCTION "COB322"."NUM_CREDIT" (c_id in NUMBER)
 RETURN number
 IS c number(5);
 BEGIN
@@ -168,8 +224,12 @@ SELECT count(customer_id) INTO c FROM customer_cards NATURAL JOIN credit_card WH
 RETURN(c);
 END num_credit;
 
+/
+--------------------------------------------------------
+--  DDL for Function NUM_DEBIT
+--------------------------------------------------------
 
-create or replace function num_debit (c_id in NUMBER)
+  CREATE OR REPLACE EDITIONABLE FUNCTION "COB322"."NUM_DEBIT" (c_id in NUMBER)
 RETURN number
 IS c number(5);
 BEGIN
@@ -177,19 +237,12 @@ SELECT count(customer_id) INTO c FROM customer_cards NATURAL JOIN debit_card WHE
 RETURN(c);
 END num_debit;
 
+/
+--------------------------------------------------------
+--  DDL for Function REPLACE_CREDIT_CARD
+--------------------------------------------------------
 
-create or replace function update_customer(c_id in NUMBER, fname in VARCHAR2, lname in VARCHAR2, e in VARCHAR2, a in VARCHAR2)
-RETURN number 
-IS new_user_id NUMBER(25,0);
---https://stackoverflow.com/questions/8729236/solution-to-cannot-perform-a-dml-operation-inside-a-query
-PRAGMA AUTONOMOUS_TRANSACTION;
-BEGIN
-UPDATE customer SET email = e, first_name = fname, last_name = lname, address = a WHERE customer_id = c_id;
-COMMIT;
-RETURN(c_id);
-end update_customer;
-
-create or replace function replace_credit_card(card_num IN NUMBER, sec_code in NUMBER, card_i in NUMBER )
+  CREATE OR REPLACE EDITIONABLE FUNCTION "COB322"."REPLACE_CREDIT_CARD" (card_num IN NUMBER, sec_code in NUMBER, card_i in NUMBER )
 RETURN VARCHAR2
 IS c_id VARCHAR2(40);
 PRAGMA AUTONOMOUS_TRANSACTION;
@@ -199,8 +252,12 @@ COMMIT;
 RETURN(c_id);
 end replace_credit_card;
 
+/
+--------------------------------------------------------
+--  DDL for Function REPLACE_DEBIT_CARD
+--------------------------------------------------------
 
-create or replace function replace_debit_card(card_num IN NUMBER, sec_code in NUMBER, n_pin in NUMBER, card_i in NUMBER )
+  CREATE OR REPLACE EDITIONABLE FUNCTION "COB322"."REPLACE_DEBIT_CARD" (card_num IN NUMBER, sec_code in NUMBER, n_pin in NUMBER, card_i in NUMBER )
 RETURN VARCHAR2
 IS c_id VARCHAR2(40);
 PRAGMA AUTONOMOUS_TRANSACTION;
@@ -211,5 +268,20 @@ COMMIT;
 RETURN(c_id);
 end replace_debit_card;
 
+/
+--------------------------------------------------------
+--  DDL for Function UPDATE_CUSTOMER
+--------------------------------------------------------
 
+  CREATE OR REPLACE EDITIONABLE FUNCTION "COB322"."UPDATE_CUSTOMER" (c_id in NUMBER, fname in VARCHAR2, lname in VARCHAR2, e in VARCHAR2, a in VARCHAR2)
+RETURN number 
+IS new_user_id NUMBER(25,0);
+--https://stackoverflow.com/questions/8729236/solution-to-cannot-perform-a-dml-operation-inside-a-query
+PRAGMA AUTONOMOUS_TRANSACTION;
+BEGIN
+UPDATE customer SET email = e, first_name = fname, last_name = lname, "address" = a WHERE customer_id = c_id;
+COMMIT;
+RETURN(c_id);
+end update_customer;
 
+/
