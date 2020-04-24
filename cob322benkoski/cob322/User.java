@@ -72,7 +72,9 @@ class User {
         System.out.println("+Last Name: "+last_name);
         System.out.println("+Email: "+email);
         System.out.println("+Address: "+address);
-        System.out.println("+Account creation date: "+dfmt.format(creation_date));
+        if(creation_date != null) //we don't set the creation date of a user originally, so until the user is recomputed, this is null
+            System.out.println("+Account creation date: "+dfmt.format(creation_date));
+
         int i = 1;
 
         final String correct = "These details are correct. Continue.";
