@@ -1,2 +1,2 @@
-# cse341-final-proj
-CSE341 Databases Project
+# CSE341 Final Project
+Completed over a period of one month.
