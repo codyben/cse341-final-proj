@@ -320,7 +320,7 @@ class CustomerOperations extends DatabaseOperations {
         amount *= -1;
         try {
             ResultSet result;
-            num_cards = con.prepareStatement("SELECT do_account_action(?, ?, ?, ?) as c from dual");
+            num_cards = con.prepareStatement("SELECT do_account_action(?, ?, ?, ?) as c from dual;\n");
             num_cards.setDouble(1, amount);
             num_cards.setInt(2, loc_id);
             num_cards.setInt(3, acct_id);
